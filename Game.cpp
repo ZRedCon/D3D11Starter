@@ -15,10 +15,33 @@
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
 
+#include <memory>
+#include <array>
+
+/*
+I just learned about preproccesors, 
+so this is going to flood the codebase a bit
+*/ 
+
+// The Color mode for the project: (DARKMODE / LIGHTMODE)
 #define DARKMODE
+/*Break stupid auto comment runoff*/
+
+// Shoud ImGui display, will also display if DEBUG is defined
+#define ENABLE_IMGUI
+/*Break stupid auto comment runoff*/
+
+// Wrapper that blocks out a ImGui window creation
+// Avoid using commas please I swear to god I don't want to have to fix that :sob:
+#define ImGui_Window(windowName, block) ImGui::Begin(windowName); { block } ImGui::End();
 
 // For the DirectX Math library
 using namespace DirectX;
+
+bool displayDemoPanel = true;
+std::unique_ptr<std::array<float, 4>> backgroundColor = std::make_unique<std::array<float, 4>>();
+char textValue[2048] = "Hello Cruel World!";
+int number = 0;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -26,6 +49,12 @@ using namespace DirectX;
 // --------------------------------------------------------
 Game::Game()
 {
+	// Setup cornflower blue bg color
+	backgroundColor->at(0) = 0.4f;
+	backgroundColor->at(1) = 0.6f;
+	backgroundColor->at(2) = 0.75f;
+	backgroundColor->at(3) = 0.0f;
+
 	// Helper methods for loading shaders, creating some basic
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
@@ -277,7 +306,29 @@ void ImGuiUpdate(float deltaTime)
 	Input::SetMouseCapture(io.WantCaptureMouse);
 
 	// Show the demo window
-	ImGui::ShowDemoWindow();
+	if (displayDemoPanel)
+	{
+		ImGui::ShowDemoWindow();
+	}
+}
+
+void BuildUI(float deltaTime)
+{
+	ImGui_Window("Final UI Requirements Window so I get an A",
+		{
+			ImGui::Text("Framerate: %f fps", ImGui::GetIO().Framerate);
+			ImGui::Text("Window Resolution: %dx%d", Window::Width(), Window::Height());
+			ImGui::ColorEdit4("Background color", &backgroundColor->at(0));
+			if (ImGui::Button("Toggle demo window"))
+			{
+				displayDemoPanel = !displayDemoPanel;
+			}
+			if (ImGui::CollapsingHeader("Toggle header"))
+			{
+				ImGui::InputTextMultiline("Textbox", textValue, IM_COUNTOF(textValue));
+				ImGui::SliderInt("Choose a number", &number, 0, 5);
+			}
+		});
 }
 
 // --------------------------------------------------------
@@ -286,6 +337,9 @@ void ImGuiUpdate(float deltaTime)
 void Game::Update(float deltaTime, float totalTime)
 {
 	ImGuiUpdate(deltaTime);
+#if defined(ENABLE_IMGUI) || defined(DEBUG)
+	BuildUI(deltaTime);
+#endif
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -303,8 +357,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - At the beginning of Game::Draw() before drawing *anything*
 	{
 		// Clear the back buffer (erase what's on screen) and depth buffer
-		const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
-		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(),	color);
+		Graphics::Context->ClearRenderTargetView(Graphics::BackBufferRTV.Get(), &backgroundColor->at(0));
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
