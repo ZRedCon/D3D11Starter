@@ -4,6 +4,7 @@
 #include "Input.h"
 #include "PathHelpers.h"
 #include "Window.h"
+#include "Mesh.h"
 
 #include <DirectXMath.h>
 
@@ -17,6 +18,7 @@
 
 #include <memory>
 #include <array>
+#include <cmath>
 
 /*
 I just learned about preproccesors, 
@@ -42,6 +44,18 @@ bool displayDemoPanel = true;
 std::unique_ptr<std::array<float, 4>> backgroundColor = std::make_unique<std::array<float, 4>>();
 char textValue[2048] = "Hello Cruel World!";
 int number = 0;
+
+// Smart Pointers for temp Meshes
+std::shared_ptr<Mesh> triangle;
+std::shared_ptr<Mesh> diamond;
+std::shared_ptr<Mesh> cube;
+
+struct t_Vect3
+{
+	float x;
+	float y;
+	float z;
+};
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -185,6 +199,17 @@ void Game::LoadShaders()
 }
 
 
+static t_Vect3 GOGOGADGETHELPER(int x, float divisor)
+{
+	auto a = 0.628318530718 * x; // Go go gadget magic number
+	return { (float)std::sin(a) / divisor, (float)std::cos(a) / divisor, 0.0f };
+}
+
+static Vertex CreateVertex(t_Vect3 position, XMFLOAT4 color, t_Vect3 offset)
+{
+	return { XMFLOAT3(position.x + offset.x, position.y + offset.y, position.z + offset.z), color };
+}
+
 // --------------------------------------------------------
 // Creates the geometry we're going to draw
 // --------------------------------------------------------
@@ -193,8 +218,12 @@ void Game::CreateGeometry()
 	// Create some temporary variables to represent colors
 	// - Not necessary, just makes things more readable
 	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 yellow = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
 	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	XMFLOAT4 cyan = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
 	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in CPU memory
@@ -208,73 +237,69 @@ void Game::CreateGeometry()
 	//    knowing the exact size (in pixels) of the image/window/etc.  
 	// - Long story short: Resizing the window also resizes the triangle,
 	//    since we're describing the triangle in terms of the window itself
-	Vertex vertices[] =
+	std::array<Vertex, 3> vertices1 =
 	{
-		{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
+		Vertex{ XMFLOAT3(+0.0f, +0.5f, +0.0f), red },
 		{ XMFLOAT3(+0.5f, -0.5f, +0.0f), blue },
 		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
 	};
 
-	// Set up indices, which tell us which vertices to use and in which order
-	// - This is redundant for just 3 vertices, but will be more useful later
-	// - Indices are technically not required if the vertices are in the buffer 
-	//    in the correct order and each one will be used exactly once
-	// - But just to see how it's done...
-	unsigned int indices[] = { 0, 1, 2 };
+	t_Vect3 diamond_offset = { 0.5f, 0.5f, 0.0f };
+	t_Vect3 splonky_mc_donald_s = { -0.5f, 0.5f, 0.0f };
 
 
-	// Create a VERTEX BUFFER
-	// - This holds the vertex data of triangles for a single object
-	// - This buffer is created on the GPU, which is where the data needs to
-	//    be if we want the GPU to act on it (as in: draw it to the screen)
+	std::array<Vertex, 12> vertices2 =
 	{
-		// First, we need to describe the buffer we want Direct3D to make on the GPU
-		//  - Note that this variable is created on the stack since we only need it once
-		//  - After the buffer is created, this description variable is unnecessary
-		D3D11_BUFFER_DESC vbd = {};
-		vbd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		vbd.ByteWidth = sizeof(Vertex) * 3;       // 3 = number of vertices in the buffer
-		vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells Direct3D this is a vertex buffer
-		vbd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
-		vbd.MiscFlags = 0;
-		vbd.StructureByteStride = 0;
+		CreateVertex({0.1f,0.0f,0.0f}, black, diamond_offset),
+		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
+		CreateVertex({0.0f,0.1f,0.0f}, black, diamond_offset),
 
-		// Create the proper struct to hold the initial vertex data
-		// - This is how we initially fill the buffer with data
-		// - Essentially, we're specifying a pointer to the data to copy
-		D3D11_SUBRESOURCE_DATA initialVertexData = {};
-		initialVertexData.pSysMem = vertices; // pSysMem = Pointer to System Memory
+		CreateVertex({-0.1f,0.0f,0.0f}, black, diamond_offset),
+		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
+		CreateVertex({0.0f,-0.1f,0.0f}, black, diamond_offset),
 
-		// Actually create the buffer on the GPU with the initial data
-		// - Once we do this, we'll NEVER CHANGE DATA IN THE BUFFER AGAIN
-		Graphics::Device->CreateBuffer(&vbd, &initialVertexData, vertexBuffer.GetAddressOf());
-	}
+		CreateVertex({-0.1f,0.0f,0.0f}, black, diamond_offset),
+		CreateVertex({0.0f,0.1f,0.0f}, black, diamond_offset),
+		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
 
-	// Create an INDEX BUFFER
-	// - This holds indices to elements in the vertex buffer
-	// - This is most useful when vertices are shared among neighboring triangles
-	// - This buffer is created on the GPU, which is where the data needs to
-	//    be if we want the GPU to act on it (as in: draw it to the screen)
+		CreateVertex({0.1f,0.0f,0.0f}, black, diamond_offset),
+		CreateVertex({0.0f,-0.1f,0.0f}, black, diamond_offset),
+		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
+	};
+
+	// Verticies vs. Indicies
+	std::array<Vertex, 11> vertices3 =
 	{
-		// Describe the buffer, as we did above, with two major differences
-		//  - Byte Width (3 unsigned integers vs. 3 whole vertices)
-		//  - Bind Flag (used as an index buffer instead of a vertex buffer) 
-		D3D11_BUFFER_DESC ibd = {};
-		ibd.Usage = D3D11_USAGE_IMMUTABLE;	// Will NEVER change
-		ibd.ByteWidth = sizeof(unsigned int) * 3;	// 3 = number of indices in the buffer
-		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;	// Tells Direct3D this is an index buffer
-		ibd.CPUAccessFlags = 0;	// Note: We cannot access the data from C++ (this is good)
-		ibd.MiscFlags = 0;
-		ibd.StructureByteStride = 0;
+		CreateVertex({0.0f,0.0f,0.0f}, white, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(1, 4), red, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(2, 8), yellow, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(3, 4), green, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(4, 8), blue, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(5, 4), black, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(6, 8), red, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(7, 4), yellow, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(8, 8), green, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(9, 4), blue, splonky_mc_donald_s),
+		CreateVertex(GOGOGADGETHELPER(10, 8), black, splonky_mc_donald_s),
+	};
 
-		// Specify the initial data for this buffer, similar to above
-		D3D11_SUBRESOURCE_DATA initialIndexData = {};
-		initialIndexData.pSysMem = indices; // pSysMem = Pointer to System Memory
+	std::array<unsigned int, 30> indices =
+	{
+		1, 0, 10, 
+		2, 0, 1, 
+		3, 0, 2,
+		4, 0, 3,
+		5, 0, 4,
+		6, 0, 5,
+		7, 0, 6,
+		8, 0, 7,
+		9, 0, 8,
+		10, 0, 9,
+	};
 
-		// Actually create the buffer with the initial data
-		// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-		Graphics::Device->CreateBuffer(&ibd, &initialIndexData, indexBuffer.GetAddressOf());
-	}
+	triangle = std::make_shared<Mesh>(vertices1);
+	diamond = std::make_shared<Mesh>(vertices2);
+	cube = std::make_shared<Mesh>(vertices3, indices);
 }
 
 
@@ -314,19 +339,19 @@ void ImGuiUpdate(float deltaTime)
 
 void BuildUI(float deltaTime)
 {
-	ImGui_Window("Final UI Requirements Window so I get an A",
+	ImGui_Window("Inspector",
 		{
-			ImGui::Text("Framerate: %f fps", ImGui::GetIO().Framerate);
-			ImGui::Text("Window Resolution: %dx%d", Window::Width(), Window::Height());
-			ImGui::ColorEdit4("Background color", &backgroundColor->at(0));
-			if (ImGui::Button("Toggle demo window"))
+			if (ImGui::CollapsingHeader("Triangle"))
 			{
-				displayDemoPanel = !displayDemoPanel;
+				triangle->GetGUI();
 			}
-			if (ImGui::CollapsingHeader("Toggle header"))
+			if (ImGui::CollapsingHeader("Diamond"))
 			{
-				ImGui::InputTextMultiline("Textbox", textValue, IM_COUNTOF(textValue));
-				ImGui::SliderInt("Choose a number", &number, 0, 5);
+				diamond->GetGUI();
+			}
+			if (ImGui::CollapsingHeader("Spikey"))
+			{
+				cube->GetGUI();
 			}
 		});
 }
@@ -361,31 +386,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	// DRAW geometry
-	// - These steps are generally repeated for EACH object you draw
-	// - Other Direct3D calls will also be necessary to do more complex things
-	{
-		// Set buffers in the input assembler (IA) stage
-		//  - Do this ONCE PER OBJECT, since each object may have different geometry
-		//  - For this demo, this step *could* simply be done once during Init()
-		//  - However, this needs to be done between EACH DrawIndexed() call
-		//     when drawing different geometry, so it's here as an example
-		UINT stride = sizeof(Vertex);
-		UINT offset = 0;
-		Graphics::Context->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-		Graphics::Context->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-		// Tell Direct3D to draw
-		//  - Begins the rendering pipeline on the GPU
-		//  - Do this ONCE PER OBJECT you intend to draw
-		//  - This will use all currently set Direct3D resources (shaders, buffers, etc)
-		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-		//     vertices in the currently set VERTEX BUFFER
-		Graphics::Context->DrawIndexed(
-			3,     // The number of indices to use (we could draw a subset if we wanted)
-			0,     // Offset to the first index we want to use
-			0);    // Offset to add to each index when looking up vertices
-	}
+	triangle->Draw();
+	diamond->Draw();
+	cube->Draw();
 
 	// ImGui Drawing
 	{
