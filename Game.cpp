@@ -122,7 +122,7 @@ Game::Game()
 	// Creation of constant buffer
 	{
 		// The doohickey
-		vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		vsData.colorTint = XMFLOAT4(1.0f, 0.1f, 0.1f, 1.0f);
 		vsData.offset	 = XMFLOAT3(0.25f, 0.0f, 0.0f);
 
 		// Actual creation and linking of constant bugger
@@ -150,7 +150,6 @@ Game::~Game()
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 }
-
 
 // --------------------------------------------------------
 // Loads shaders from compiled shader object (.cso) files
@@ -221,7 +220,6 @@ void Game::LoadShaders()
 			inputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
 	}
 }
-
 
 static t_Vect3 GOGOGADGETHELPER(int x, float divisor)
 {
@@ -326,7 +324,6 @@ void Game::CreateGeometry()
 	cube = std::make_shared<Mesh>(vertices3, indices);
 }
 
-
 // --------------------------------------------------------
 // Handle resizing to match the new window size
 //  - Eventually, we'll want to update our 3D camera
@@ -335,7 +332,6 @@ void Game::OnResize()
 {
 	
 }
-
 
 void ImGuiUpdate(float deltaTime)
 {
@@ -364,20 +360,25 @@ void ImGuiUpdate(float deltaTime)
 void BuildUI(float deltaTime)
 {
 	ImGui_Window("Inspector",
+	{
+		if (ImGui::CollapsingHeader("Triangle"))
 		{
-			if (ImGui::CollapsingHeader("Triangle"))
-			{
-				triangle->GetGUI();
-			}
-			if (ImGui::CollapsingHeader("Diamond"))
-			{
-				diamond->GetGUI();
-			}
-			if (ImGui::CollapsingHeader("Spikey"))
-			{
-				cube->GetGUI();
-			}
-		});
+			triangle->GetGUI();
+		}
+		if (ImGui::CollapsingHeader("Diamond"))
+		{
+			diamond->GetGUI();
+		}
+		if (ImGui::CollapsingHeader("Spikey"))
+		{
+			cube->GetGUI();
+		}
+	});
+	ImGui_Window("Global Inspector",
+	{
+		ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
+		ImGui::DragFloat4("Tint", &vsData.colorTint.x, 0.01f, -1.0f, 1.0f);
+	});
 }
 
 // --------------------------------------------------------
@@ -394,6 +395,11 @@ void Game::Update(float deltaTime, float totalTime)
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
 
+	// Mapping the constant buffer
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+	Graphics::Context->Unmap(constantBuffer.Get(), 0);
 }
 
 
