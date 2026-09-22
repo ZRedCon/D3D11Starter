@@ -16,6 +16,7 @@ using namespace Microsoft::WRL;
 
 typedef ComPtr<ID3D11Buffer> BufPtr;
 
+
 class Mesh
 {
 private:

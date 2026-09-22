@@ -1,3 +1,8 @@
+cbuffer BufferStruct : register(b0)
+{
+    float4 bufferColor;
+    float3 bufferOffset;
+}
 
 // Struct representing a single vertex worth of data
 // - This should match the vertex definition in our C++ code

@@ -5,6 +5,7 @@
 #include "PathHelpers.h"
 #include "Window.h"
 #include "Mesh.h"
+#include "BufferStructs.h"
 
 #include <DirectXMath.h>
 
@@ -27,12 +28,12 @@ so this is going to flood the codebase a bit
 
 // The Color mode for the project: (DARKMODE / LIGHTMODE)
 #define DARKMODE
-/*Break stupid auto comment runoff*/
 
+/*Break stupid auto comment runoff*/
 // Shoud ImGui display, will also display if DEBUG is defined
 #define ENABLE_IMGUI
-/*Break stupid auto comment runoff*/
 
+/*Break stupid auto comment runoff*/
 // Wrapper that blocks out a ImGui window creation
 // Avoid using commas please I swear to god I don't want to have to fix that :sob:
 #define ImGui_Window(windowName, block) ImGui::Begin(windowName); { block } ImGui::End();
@@ -45,10 +46,15 @@ std::unique_ptr<std::array<float, 4>> backgroundColor = std::make_unique<std::ar
 char textValue[2048] = "Hello Cruel World!";
 int number = 0;
 
-// Smart Pointers for temp Meshes
+// Constant Buffer
+BufPtr constantBuffer;
+
+// -- Temp vars for current assignment(s) --
 std::shared_ptr<Mesh> triangle;
 std::shared_ptr<Mesh> diamond;
 std::shared_ptr<Mesh> cube;
+
+VertexShaderData vsData;
 
 struct t_Vect3
 {
@@ -63,6 +69,7 @@ struct t_Vect3
 // --------------------------------------------------------
 Game::Game()
 {
+
 	// Setup cornflower blue bg color
 	backgroundColor->at(0) = 0.4f;
 	backgroundColor->at(1) = 0.6f;
@@ -111,15 +118,32 @@ Game::Game()
 		ImGui::StyleColorsLight();
 #endif
 	}
+
+	// Creation of constant buffer
+	{
+		// The doohickey
+		vsData.colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		vsData.offset	 = XMFLOAT3(0.25f, 0.0f, 0.0f);
+
+		// Actual creation and linking of constant bugger
+		D3D11_BUFFER_DESC ibd = {};
+		ibd.Usage = D3D11_USAGE_DYNAMIC;
+		ibd.ByteWidth = (sizeof(VertexShaderData) + 15) / 16 * 16;
+		ibd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		ibd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		ibd.MiscFlags = 0;
+		ibd.StructureByteStride = 0;
+
+		Graphics::Device->CreateBuffer(&ibd, 0, 
+			constantBuffer.GetAddressOf());
+
+		Graphics::Context->VSSetConstantBuffers(
+			0,
+			1,
+			constantBuffer.GetAddressOf());
+	}
 }
 
-
-// --------------------------------------------------------
-// Clean up memory or objects created by this class
-// 
-// Note: Using smart pointers means there probably won't
-//       be much to manually clean up here!
-// --------------------------------------------------------
 Game::~Game()
 {
 	ImGui_ImplDX11_Shutdown();
@@ -369,6 +393,7 @@ void Game::Update(float deltaTime, float totalTime)
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
+
 }
 
 
