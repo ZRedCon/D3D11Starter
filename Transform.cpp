@@ -16,6 +16,7 @@ XMFLOAT3 Transform::GetScale() { return scale; }
 
 void Transform::RebuildMatricies()
 {
+	dirty = false;
 	auto translation = XMMatrixTranslation(position.x, position.y, position.z);
 	auto newScale = XMMatrixScaling(scale.x, scale.y, scale.z);
 	auto newRotation = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);

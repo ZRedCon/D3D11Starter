@@ -12,6 +12,7 @@
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
+#include "GameEntity.h"
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -20,6 +21,8 @@
 #include <memory>
 #include <array>
 #include <cmath>
+#include <vector>
+#include <string>
 
 /*
 I just learned about preproccesors, 
@@ -56,12 +59,7 @@ std::shared_ptr<Mesh> cube;
 
 VertexShaderData vsData;
 
-struct t_Vect3
-{
-	float x;
-	float y;
-	float z;
-};
+std::vector<GameEntity> entities;
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -122,9 +120,8 @@ Game::Game()
 	// Creation of constant buffer
 	{
 		// The doohickey
-		vsData.colorTint = XMFLOAT4(1.0f, 0.1f, 0.1f, 1.0f);
-		//TODO: Fix
-		//vsData.offset	 = XMFLOAT3(0.25f, 0.0f, 0.0f);
+		vsData.colorTint = XMFLOAT4();
+		XMStoreFloat4x4(&vsData.world, XMMatrixIdentity());
 
 		// Actual creation and linking of constant bugger
 		D3D11_BUFFER_DESC ibd = {};
@@ -142,6 +139,15 @@ Game::Game()
 			0,
 			1,
 			constantBuffer.GetAddressOf());
+	}
+
+	// Make the entities
+	{
+		entities.push_back(GameEntity(triangle));
+		entities.push_back(GameEntity(diamond));
+		entities.push_back(GameEntity(cube));
+		entities.push_back(GameEntity(cube));
+		entities.push_back(GameEntity(cube));
 	}
 }
 
@@ -222,15 +228,15 @@ void Game::LoadShaders()
 	}
 }
 
-static t_Vect3 GOGOGADGETHELPER(int x, float divisor)
+static XMFLOAT3 GetPointAtAngle(int x, float divisor)
 {
 	auto a = 0.628318530718 * x; // Go go gadget magic number
 	return { (float)std::sin(a) / divisor, (float)std::cos(a) / divisor, 0.0f };
 }
 
-static Vertex CreateVertex(t_Vect3 position, XMFLOAT4 color, t_Vect3 offset)
+static Vertex CreateVertex(XMFLOAT3 position, XMFLOAT4 color)
 {
-	return { XMFLOAT3(position.x + offset.x, position.y + offset.y, position.z + offset.z), color };
+	return { position, color };
 }
 
 // --------------------------------------------------------
@@ -267,43 +273,39 @@ void Game::CreateGeometry()
 		{ XMFLOAT3(-0.5f, -0.5f, +0.0f), green },
 	};
 
-	t_Vect3 diamond_offset = { 0.5f, 0.5f, 0.0f };
-	t_Vect3 splonky_mc_donald_s = { -0.5f, 0.5f, 0.0f };
-
-
 	std::array<Vertex, 12> vertices2 =
 	{
-		CreateVertex({0.1f,0.0f,0.0f}, black, diamond_offset),
-		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
-		CreateVertex({0.0f,0.1f,0.0f}, black, diamond_offset),
+		CreateVertex({0.1f,0.0f,0.0f}, black),
+		CreateVertex({0.0f,0.0f,0.0f}, white),
+		CreateVertex({0.0f,0.1f,0.0f}, black),
 
-		CreateVertex({-0.1f,0.0f,0.0f}, black, diamond_offset),
-		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
-		CreateVertex({0.0f,-0.1f,0.0f}, black, diamond_offset),
+		CreateVertex({-0.1f,0.0f,0.0f}, black),
+		CreateVertex({0.0f,0.0f,0.0f}, white),
+		CreateVertex({0.0f,-0.1f,0.0f}, black),
 
-		CreateVertex({-0.1f,0.0f,0.0f}, black, diamond_offset),
-		CreateVertex({0.0f,0.1f,0.0f}, black, diamond_offset),
-		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
+		CreateVertex({-0.1f,0.0f,0.0f}, black),
+		CreateVertex({0.0f,0.1f,0.0f}, black),
+		CreateVertex({0.0f,0.0f,0.0f}, white),
 
-		CreateVertex({0.1f,0.0f,0.0f}, black, diamond_offset),
-		CreateVertex({0.0f,-0.1f,0.0f}, black, diamond_offset),
-		CreateVertex({0.0f,0.0f,0.0f}, white, diamond_offset),
+		CreateVertex({0.1f,0.0f,0.0f}, black),
+		CreateVertex({0.0f,-0.1f,0.0f}, black),
+		CreateVertex({0.0f,0.0f,0.0f}, white),
 	};
 
 	// Verticies vs. Indicies
 	std::array<Vertex, 11> vertices3 =
 	{
-		CreateVertex({0.0f,0.0f,0.0f}, white, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(1, 4), red, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(2, 8), yellow, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(3, 4), green, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(4, 8), blue, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(5, 4), black, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(6, 8), red, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(7, 4), yellow, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(8, 8), green, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(9, 4), blue, splonky_mc_donald_s),
-		CreateVertex(GOGOGADGETHELPER(10, 8), black, splonky_mc_donald_s),
+		CreateVertex({0.0f,0.0f,0.0f}, white),
+		CreateVertex(GetPointAtAngle(1, 4), red),
+		CreateVertex(GetPointAtAngle(2, 8), yellow),
+		CreateVertex(GetPointAtAngle(3, 4), green),
+		CreateVertex(GetPointAtAngle(4, 8), blue),
+		CreateVertex(GetPointAtAngle(5, 4), black),
+		CreateVertex(GetPointAtAngle(6, 8), red),
+		CreateVertex(GetPointAtAngle(7, 4), yellow),
+		CreateVertex(GetPointAtAngle(8, 8), green),
+		CreateVertex(GetPointAtAngle(9, 4), blue),
+		CreateVertex(GetPointAtAngle(10, 8), black),
 	};
 
 	std::array<unsigned int, 30> indices =
@@ -358,27 +360,55 @@ void ImGuiUpdate(float deltaTime)
 	}
 }
 
+void GameEntityInspector(GameEntity& entity)
+{
+	Transform& currTransform = entity.GetTransform();
+
+	XMFLOAT3 newPos = currTransform.GetPosition();
+	ImGui::DragFloat3("Position", &newPos.x, 0.01f, -1.0f, 1.0f);
+	currTransform.SetPosition(newPos);
+
+	XMFLOAT3 newRot = currTransform.GetPitchYawRoll();
+	ImGui::DragFloat3("Rotation", &newRot.x, 0.01f, -1.0f, 1.0f);
+	currTransform.SetRotation(newRot);
+
+	XMFLOAT3 newScale = currTransform.GetScale();
+	ImGui::DragFloat3("Scale", &newScale.x, 0.01f, 0.01f, 10.0f);
+	currTransform.SetScale(newScale);
+}
+
 void BuildUI(float deltaTime)
 {
 	ImGui_Window("Inspector",
 	{
-		if (ImGui::CollapsingHeader("Triangle"))
+		if (ImGui::CollapsingHeader("Meshes"))
 		{
-			triangle->GetGUI();
+			if (ImGui::CollapsingHeader("Triangle"))
+			{
+				triangle->GetGUI();
+			}
+			if (ImGui::CollapsingHeader("Diamond"))
+			{
+				diamond->GetGUI();
+			}
+			if (ImGui::CollapsingHeader("Spikey"))
+			{
+				cube->GetGUI();
+			}
 		}
-		if (ImGui::CollapsingHeader("Diamond"))
+		if (ImGui::CollapsingHeader("GameEntities"))
 		{
-			diamond->GetGUI();
-		}
-		if (ImGui::CollapsingHeader("Spikey"))
-		{
-			cube->GetGUI();
+			for (int i = 0; i < entities.size(); i++)
+			{
+				if (ImGui::CollapsingHeader((std::string("Entity ")+std::to_string(i)+ std::string(":")).c_str()))
+				{
+					GameEntityInspector(entities[i]);
+				}
+			}
 		}
 	});
 	ImGui_Window("Global Inspector",
 	{
-		//TODO: Fix
-		//ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
 		ImGui::DragFloat4("Tint", &vsData.colorTint.x, 0.01f, -1.0f, 1.0f);
 	});
 }
@@ -396,12 +426,6 @@ void Game::Update(float deltaTime, float totalTime)
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
 		Window::Quit();
-
-	// Mapping the constant buffer
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-	Graphics::Context->Unmap(constantBuffer.Get(), 0);
 }
 
 
@@ -419,9 +443,16 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	triangle->Draw();
-	diamond->Draw();
-	cube->Draw();
+	for (int i = 0; i < entities.size(); i++)
+	{
+		GameEntity& currentEntity = entities[i];
+		vsData.world = currentEntity.GetTransform().GetWorldMatrix();
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+		Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+		Graphics::Context->Unmap(constantBuffer.Get(), 0);
+		currentEntity.Draw();
+	}
 
 	// ImGui Drawing
 	{
