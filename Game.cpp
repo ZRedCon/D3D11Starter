@@ -123,7 +123,8 @@ Game::Game()
 	{
 		// The doohickey
 		vsData.colorTint = XMFLOAT4(1.0f, 0.1f, 0.1f, 1.0f);
-		vsData.offset	 = XMFLOAT3(0.25f, 0.0f, 0.0f);
+		//TODO: Fix
+		//vsData.offset	 = XMFLOAT3(0.25f, 0.0f, 0.0f);
 
 		// Actual creation and linking of constant bugger
 		D3D11_BUFFER_DESC ibd = {};
@@ -376,7 +377,8 @@ void BuildUI(float deltaTime)
 	});
 	ImGui_Window("Global Inspector",
 	{
-		ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
+		//TODO: Fix
+		//ImGui::DragFloat3("Offset", &vsData.offset.x, 0.01f, -1.0f, 1.0f);
 		ImGui::DragFloat4("Tint", &vsData.colorTint.x, 0.01f, -1.0f, 1.0f);
 	});
 }
