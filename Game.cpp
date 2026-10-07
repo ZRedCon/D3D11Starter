@@ -13,6 +13,7 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "GameEntity.h"
+#include "Camera.h"
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -61,13 +62,15 @@ VertexShaderData vsData;
 
 std::vector<GameEntity> entities;
 
+std::vector<std::shared_ptr<Camera>> cameras;
+int currCam = -1;
+
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
 // are initialized but before the game loop begins
 // --------------------------------------------------------
 Game::Game()
 {
-
 	// Setup cornflower blue bg color
 	backgroundColor->at(0) = 0.4f;
 	backgroundColor->at(1) = 0.6f;
@@ -148,6 +151,16 @@ Game::Game()
 		entities.push_back(GameEntity(cube));
 		entities.push_back(GameEntity(cube));
 		entities.push_back(GameEntity(cube));
+
+		entities[ 0 ].GetTransform().MoveAbsolute(0, 0, 0.1);
+	}
+	
+	// Make the cameras
+	{
+		cameras.push_back( std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(0,0,-1)) );
+		cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(1, 1, -4)));
+		cameras[ 1 ]->SetFOV( 0.7 );
+		currCam = 0;
 	}
 }
 
@@ -333,7 +346,9 @@ void Game::CreateGeometry()
 // --------------------------------------------------------
 void Game::OnResize()
 {
-	
+	if (currCam > -1)
+		for (auto cam : cameras)
+			cam->UpdateProjectionMatrix(Window::AspectRatio());
 }
 
 void ImGuiUpdate(float deltaTime)
@@ -360,53 +375,81 @@ void ImGuiUpdate(float deltaTime)
 	}
 }
 
-void GameEntityInspector(GameEntity& entity)
+void GameEntityInspector(GameEntity& entity, std::string name)
 {
 	Transform& currTransform = entity.GetTransform();
 
 	XMFLOAT3 newPos = currTransform.GetPosition();
-	ImGui::DragFloat3("Position", &newPos.x, 0.01f, -1.0f, 1.0f);
+	ImGui::DragFloat3((name + std::string(" Position")).c_str(), &newPos.x, 0.01f, -1.0f, 1.0f);
 	currTransform.SetPosition(newPos);
 
 	XMFLOAT3 newRot = currTransform.GetPitchYawRoll();
-	ImGui::DragFloat3("Rotation", &newRot.x, 0.01f, -1.0f, 1.0f);
+	ImGui::DragFloat3((name + std::string(" Rotation")).c_str(), &newRot.x, 0.01f, -1.0f, 1.0f);
 	currTransform.SetRotation(newRot);
 
 	XMFLOAT3 newScale = currTransform.GetScale();
-	ImGui::DragFloat3("Scale", &newScale.x, 0.01f, 0.01f, 10.0f);
+	ImGui::DragFloat3((name + std::string(" Scale")).c_str(), &newScale.x, 0.01f, 0.01f, 10.0f);
 	currTransform.SetScale(newScale);
+}
+
+void CameraInspector(Camera& camera, std::string name, int index)
+{
+	if (ImGui::CollapsingHeader((name + " Transform").c_str()))
+	{
+		Transform& currTransform = camera.GetTransform();
+
+		XMFLOAT3 newPos = currTransform.GetPosition();
+		ImGui::DragFloat3((name + std::string(" Position")).c_str(), &newPos.x, 0.01f, -1.0f, 1.0f);
+		currTransform.SetPosition(newPos);
+
+		XMFLOAT3 newRot = currTransform.GetPitchYawRoll();
+		ImGui::DragFloat3((name + std::string(" Rotation")).c_str(), &newRot.x, 0.01f, -1.0f, 1.0f);
+		currTransform.SetRotation(newRot);
+	}
+	
+	float newFov = camera.GetFov();
+	ImGui::DragFloat((name + " Fov").c_str(), &newFov, 0.01f, 0.0f, XM_2PI);
+	camera.SetFOV( newFov );
+
+	XMFLOAT2 newPlanes = camera.GetClipPlanes();
+	ImGui::DragFloat2((name + " Clipping planes (near|far)").c_str(), &newPlanes.x, 0.001f, 0.01f, 10000.0f);
+	if (newPlanes.x >= newPlanes.y)
+		newPlanes.y = newPlanes.x + 0.001;
+	camera.SetClipPlanes( newPlanes );
+
+	if (ImGui::Button((name + " Set as Main Camera").c_str()))
+	{
+		currCam = index;
+	}
 }
 
 void BuildUI(float deltaTime)
 {
-	ImGui_Window("Inspector",
-	{
-		if (ImGui::CollapsingHeader("Meshes"))
+	ImGui::Begin("Inspector"); {
 		{
-			if (ImGui::CollapsingHeader("Triangle"))
-			{
-				triangle->GetGUI();
-			}
-			if (ImGui::CollapsingHeader("Diamond"))
-			{
-				diamond->GetGUI();
-			}
-			if (ImGui::CollapsingHeader("Spikey"))
-			{
-				cube->GetGUI();
-			}
-		}
-		if (ImGui::CollapsingHeader("GameEntities"))
-		{
-			for (int i = 0; i < entities.size(); i++)
-			{
-				if (ImGui::CollapsingHeader((std::string("Entity ")+std::to_string(i)+ std::string(":")).c_str()))
-				{
-					GameEntityInspector(entities[i]);
+			if (ImGui::CollapsingHeader("Meshes")) {
+				if (ImGui::CollapsingHeader("Triangle")) {
+					triangle->GetGUI();
+				} if (ImGui::CollapsingHeader("Diamond")) {
+					diamond->GetGUI();
+				} if (ImGui::CollapsingHeader("Spikey")) {
+					cube->GetGUI();
+				}
+			} if (ImGui::CollapsingHeader("GameEntities")) {
+				for (int i = 0; i < entities.size(); i++) {
+					if (ImGui::CollapsingHeader((std::string("Entity ") + std::to_string(i) + std::string(":")).c_str())) {
+						GameEntityInspector(entities[i], std::to_string(i));
+					}
+				}
+			} if (ImGui::CollapsingHeader("Cameras")) {
+				for (int i = 0; i < cameras.size(); i++) {
+					if (ImGui::CollapsingHeader((std::string("Camera ") + std::to_string(i) + std::string(":")).c_str())) {
+						CameraInspector(*cameras[i], std::to_string(i), i);
+					}
 				}
 			}
 		}
-	});
+	} ImGui::End();;
 	ImGui_Window("Global Inspector",
 	{
 		ImGui::DragFloat4("Tint", &vsData.colorTint.x, 0.01f, -1.0f, 1.0f);
@@ -418,10 +461,13 @@ void BuildUI(float deltaTime)
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
-	ImGuiUpdate(deltaTime);
+	ImGuiUpdate( deltaTime );
 #if defined(ENABLE_IMGUI) || defined(DEBUG)
-	BuildUI(deltaTime);
+	BuildUI( deltaTime );
 #endif
+
+	cameras[ currCam ]->Update( deltaTime );
+
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))
@@ -443,6 +489,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+
+	vsData.view = cameras[currCam]->GetViewMatrix();
+	vsData.projection = cameras[currCam]->GetProjectionMatrix();
 	for (int i = 0; i < entities.size(); i++)
 	{
 		GameEntity& currentEntity = entities[i];
