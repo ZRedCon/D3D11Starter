@@ -81,7 +81,7 @@ void Mesh::Draw()
 
 const void Mesh::GetGUI()
 {
-	ImGui::Text("Triangles: %i", vertexBufferSize / 3);
-	ImGui::Text("Verticies: %i", vertexBufferSize);
+	ImGui::Text("Triangles: %i", indexBufferSize / 3);
+	ImGui::Text("Verticies: %i", indexBufferSize);
 	ImGui::Text("Indices: %i", indexBufferSize);
 }

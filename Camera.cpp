@@ -104,10 +104,13 @@ void Camera::Update(float dt)
 
 	if (Input::MouseLeftDown())
 	{
-		float cursorMovementX = Input::GetMouseXDelta();
+		int cursorMovementX = Input::GetMouseXDelta();
 		int cursorMovementY = Input::GetMouseYDelta();
-		if (cursorMovementX > XM_PIDIV2) cursorMovementX = XM_PIDIV2;
-		else if (cursorMovementX < -XM_PIDIV2) cursorMovementX = XM_PIDIV2;
+
+		XMFLOAT3 rotation = transform->GetPitchYawRoll();
+
+		if (cursorMovementX + rotation.x > XM_PIDIV2) cursorMovementX = XM_PIDIV2;
+		else if (cursorMovementX + rotation.x < -XM_PIDIV2) cursorMovementX = XM_PIDIV2;
 		transform->Rotate(cursorMovementY * 0.05f, cursorMovementX * 0.05f, 0);
 	}
 

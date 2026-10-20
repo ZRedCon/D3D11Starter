@@ -51,7 +51,7 @@ void Transform::RebuildMatricies()
 	auto newRotation = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
 	XMMATRIX newWorldMatrix = newScale * newRotation * translation;
 	XMStoreFloat4x4(&world, newWorldMatrix);
-	XMStoreFloat4x4(&worldInverseTranspose, XMMatrixTranspose( newWorldMatrix ));
+	XMStoreFloat4x4(&worldInverseTranspose, XMMatrixTranspose( XMMatrixInverse(nullptr, newWorldMatrix)));
 }
 
 XMFLOAT4X4 Transform::GetWorldMatrix()

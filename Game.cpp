@@ -152,14 +152,14 @@ Game::Game()
 		entities.push_back(GameEntity(cube));
 		entities.push_back(GameEntity(cube));
 
-		entities[ 0 ].GetTransform().MoveAbsolute(0, 0, 0.1);
+		entities[ 0 ].GetTransform()->MoveAbsolute(0, 0, 0.1f);
 	}
 	
 	// Make the cameras
 	{
 		cameras.push_back( std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(0,0,-1)) );
 		cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(1, 1, -4)));
-		cameras[ 1 ]->SetFOV( 0.7 );
+		cameras[ 1 ]->SetFOV( 0.7f );
 		currCam = 0;
 	}
 }
@@ -377,19 +377,19 @@ void ImGuiUpdate(float deltaTime)
 
 void GameEntityInspector(GameEntity& entity, std::string name)
 {
-	Transform& currTransform = entity.GetTransform();
+	auto currTransform = entity.GetTransform();
 
-	XMFLOAT3 newPos = currTransform.GetPosition();
+	XMFLOAT3 newPos = currTransform->GetPosition();
 	ImGui::DragFloat3((name + std::string(" Position")).c_str(), &newPos.x, 0.01f, -1.0f, 1.0f);
-	currTransform.SetPosition(newPos);
+	currTransform->SetPosition(newPos);
 
-	XMFLOAT3 newRot = currTransform.GetPitchYawRoll();
+	XMFLOAT3 newRot = currTransform->GetPitchYawRoll();
 	ImGui::DragFloat3((name + std::string(" Rotation")).c_str(), &newRot.x, 0.01f, -1.0f, 1.0f);
-	currTransform.SetRotation(newRot);
+	currTransform->SetRotation(newRot);
 
-	XMFLOAT3 newScale = currTransform.GetScale();
+	XMFLOAT3 newScale = currTransform->GetScale();
 	ImGui::DragFloat3((name + std::string(" Scale")).c_str(), &newScale.x, 0.01f, 0.01f, 10.0f);
-	currTransform.SetScale(newScale);
+	currTransform->SetScale(newScale);
 }
 
 void CameraInspector(Camera& camera, std::string name, int index)
@@ -408,13 +408,13 @@ void CameraInspector(Camera& camera, std::string name, int index)
 	}
 	
 	float newFov = camera.GetFov();
-	ImGui::DragFloat((name + " Fov").c_str(), &newFov, 0.01f, 0.0f, XM_2PI);
+	ImGui::DragFloat((name + " Fov").c_str(), &newFov, 0.01f, 0.1f, XM_2PI);
 	camera.SetFOV( newFov );
 
 	XMFLOAT2 newPlanes = camera.GetClipPlanes();
 	ImGui::DragFloat2((name + " Clipping planes (near|far)").c_str(), &newPlanes.x, 0.001f, 0.01f, 10000.0f);
 	if (newPlanes.x >= newPlanes.y)
-		newPlanes.y = newPlanes.x + 0.001;
+		newPlanes.y = newPlanes.x + 0.001f;
 	camera.SetClipPlanes( newPlanes );
 
 	if (ImGui::Button((name + " Set as Main Camera").c_str()))
@@ -452,7 +452,7 @@ void BuildUI(float deltaTime)
 	} ImGui::End();;
 	ImGui_Window("Global Inspector",
 	{
-		ImGui::DragFloat4("Tint", &vsData.colorTint.x, 0.01f, -1.0f, 1.0f);
+		ImGui::ColorEdit4("Tint", &vsData.colorTint.x);
 	});
 }
 
@@ -495,7 +495,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	for (int i = 0; i < entities.size(); i++)
 	{
 		GameEntity& currentEntity = entities[i];
-		vsData.world = currentEntity.GetTransform().GetWorldMatrix();
+		vsData.world = currentEntity.GetTransform()->GetWorldMatrix();
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 		Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
 		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
