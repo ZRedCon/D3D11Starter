@@ -157,7 +157,13 @@ Game::Game()
 		entities.push_back( GameEntity(meshes["cube"], mat2) );
 		entities.push_back( GameEntity(meshes["cube"], mat3) );
 
-		entities[ 0 ].GetTransform()->MoveAbsolute(0, 0, 0.1f);
+		int x = 0;
+		for (auto entity : entities)
+		{
+			entity.GetTransform()->MoveAbsolute(x, 0, 10);
+			x += 3.0f;
+		}
+		
 	}
 	
 	// Make the cameras

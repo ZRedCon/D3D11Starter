@@ -15,7 +15,9 @@ struct VertexToPixel
 	//  |   Name          Semantic
 	//  |    |                |
 	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
+    float4 screenPosition : SV_POSITION;
+    float2 uv : TEXCOORD;
+    float3 normal : NORMAL;
 };
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
