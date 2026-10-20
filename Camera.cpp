@@ -104,8 +104,8 @@ void Camera::Update(float dt)
 
 	if (Input::MouseLeftDown())
 	{
-		int cursorMovementX = Input::GetMouseXDelta();
-		int cursorMovementY = Input::GetMouseYDelta();
+		float cursorMovementX = float(Input::GetMouseXDelta());
+		float cursorMovementY = float(Input::GetMouseYDelta());
 
 		XMFLOAT3 rotation = transform->GetPitchYawRoll();
 

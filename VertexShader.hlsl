@@ -13,13 +13,9 @@ cbuffer BufferStruct : register(b0)
 // - Each variable must have a semantic, which defines its usage
 struct VertexShaderInput
 { 
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float3 localPosition	: POSITION;     // XYZ position
-	float4 color			: COLOR;        // RGBA color
+	float3 localPosition : POSITION;
+    float2 uv : TEXCOORD;
+    float3 normal : NORMAL;
 };
 
 // Struct representing the data we're sending down the pipeline
@@ -53,7 +49,7 @@ VertexToPixel main( VertexShaderInput input )
     matrix wvp = mul(projection, mul(view, world));
 	
     output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
-	output.color = input.color + bufferColor;
+	output.color = bufferColor;
 	
     
 	// Whatever we return will make its way through the pipeline to the

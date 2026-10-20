@@ -6,12 +6,18 @@
 #include <memory>
 #include <iostream>
 
+#include <fstream>
+#include <vector>
+#include <stdexcept>
+#include <unordered_map>
+
 #include "Graphics.h"
 #include "Vertex.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
+using namespace DirectX;
 using namespace Microsoft::WRL;
 
 typedef ComPtr<ID3D11Buffer> BufPtr;
@@ -26,6 +32,9 @@ private:
 	// Index Buffer
 	BufPtr indexBuffer;
 	int indexBufferSize;
+
+	void CreateBuffers(Vertex vertices[], unsigned int numVertices,
+		unsigned int indicies[], unsigned int numIndicies);
 
 public:
 	/// <summary>
@@ -55,6 +64,7 @@ public:
 	/// </summary>
 	Mesh(Vertex vertices[], unsigned int numVertices,		
 		unsigned int indicies[], unsigned int numIndicies);
+	Mesh(const char* fileToLoad);
 
 	~Mesh();
 	BufPtr GetVertexBuffer();
