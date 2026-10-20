@@ -60,11 +60,13 @@ int number = 0;
 
 // Constant Buffer
 BufPtr constantBuffer;
+BufPtr constantBufferPixelColor;
 
 // -- Temp vars for current assignment(s) --
 std::unordered_map<std::string, std::shared_ptr<Mesh>> meshes;
 
 VertexShaderData vsData;
+PixelColorBuffer psData;
 
 std::vector<GameEntity> entities;
 
@@ -121,7 +123,6 @@ Game::Game()
 	// Creation of constant buffer
 	{
 		// The doohickey
-		vsData.colorTint = XMFLOAT4();
 		XMStoreFloat4x4(&vsData.world, XMMatrixIdentity());
 
 		// Actual creation and linking of constant bugger
@@ -137,9 +138,15 @@ Game::Game()
 			constantBuffer.GetAddressOf());
 
 		Graphics::Context->VSSetConstantBuffers(
-			0,
-			1,
-			constantBuffer.GetAddressOf());
+			0, 1, constantBuffer.GetAddressOf());
+
+		ibd.ByteWidth = (sizeof(PixelColorBuffer) + 15) / 16 * 16;
+
+		Graphics::Device->CreateBuffer(&ibd, 0,
+			constantBufferPixelColor.GetAddressOf());
+
+		Graphics::Context->PSSetConstantBuffers(
+			0, 1, constantBufferPixelColor.GetAddressOf());
 	}
 
 	// Make the entities
@@ -368,10 +375,6 @@ void BuildUI(float deltaTime)
 			}
 		}
 	} ImGui::End();;
-	ImGui_Window("Global Inspector",
-	{
-		ImGui::ColorEdit4("Tint", &vsData.colorTint.x);
-	});
 }
 
 // --------------------------------------------------------
@@ -414,15 +417,22 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		GameEntity& currentEntity = entities[i];
 
-		vsData.colorTint = currentEntity.GetMaterial()->GetTint();
 		Graphics::Context->VSSetShader(currentEntity.GetMaterial()->GetVertexShader().Get(), 0, 0);
 		Graphics::Context->PSSetShader(currentEntity.GetMaterial()->GetPixelShader().Get(), 0, 0);
 
 		vsData.world = currentEntity.GetTransform()->GetWorldMatrix();
+
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+
 		Graphics::Context->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
 		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
 		Graphics::Context->Unmap(constantBuffer.Get(), 0);
+
+		psData.color = currentEntity.GetMaterial()->GetTint();
+		Graphics::Context->Map(constantBufferPixelColor.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+		memcpy(mappedBuffer.pData, &psData, sizeof(psData));
+		Graphics::Context->Unmap(constantBufferPixelColor.Get(), 0);
+
 		currentEntity.Draw();
 	}
 

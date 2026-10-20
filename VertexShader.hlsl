@@ -1,6 +1,5 @@
 cbuffer BufferStruct : register(b0)
 {
-    float4 bufferColor;
     matrix world;
     matrix view;
     matrix projection;
@@ -31,7 +30,6 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
 	float4 screenPosition	: SV_POSITION;	// XYZW position (System Value Position)
-	float4 color			: COLOR;        // RGBA color
 };
 
 // --------------------------------------------------------
@@ -48,9 +46,7 @@ VertexToPixel main( VertexShaderInput input )
 	
     matrix wvp = mul(projection, mul(view, world));
 	
-    output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));
-	output.color = bufferColor;
-	
+    output.screenPosition = mul(wvp, float4(input.localPosition, 1.0f));	
     
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

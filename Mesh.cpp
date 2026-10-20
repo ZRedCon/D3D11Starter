@@ -278,7 +278,7 @@ Mesh::Mesh(const char* fileToLoad)
 	obj.close();
 
 	// NEXT: Create the actual buffers!
-	CreateBuffers(&finalVertices[ 0 ], finalVertices.size(), &finalIndices[ 0 ], finalIndices.size());
+	CreateBuffers(&finalVertices[ 0 ], unsigned int(finalVertices.size()), &finalIndices[ 0 ], unsigned int(finalIndices.size()));
 }
 
 Mesh::~Mesh()
@@ -321,6 +321,6 @@ void Mesh::Draw()
 const void Mesh::GetGUI()
 {
 	ImGui::Text("Triangles: %i", indexBufferSize / 3);
-	ImGui::Text("Verticies: %i", indexBufferSize);
+	ImGui::Text("Verticies: %i", vertexBufferSize);
 	ImGui::Text("Indices: %i", indexBufferSize);
 }
