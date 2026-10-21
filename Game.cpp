@@ -64,6 +64,7 @@ BufPtr constantBufferPixelColor;
 
 // -- Temp vars for current assignment(s) --
 std::unordered_map<std::string, std::shared_ptr<Mesh>> meshes;
+std::unordered_map<std::string, std::shared_ptr<Material>> materials;
 
 VertexShaderData vsData;
 PixelColorBuffer psData;
@@ -73,9 +74,12 @@ std::vector<GameEntity> entities;
 std::vector<std::shared_ptr<Camera>> cameras;
 int currCam = -1;
 
-std::shared_ptr<Material> mat1;
-std::shared_ptr<Material> mat2;
-std::shared_ptr<Material> mat3;
+static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
+{
+	entities.push_back(GameEntity(meshes[ nameOfMesh ], materials[ nameOfMaterial ]));
+	return entities.back();
+}
+
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -95,15 +99,6 @@ Game::Game()
 
 	Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	Graphics::Context->IASetInputLayout(inputLayout.Get());
-
-	//// Set initial graphics API state
-	////  - These settings persist until we change them
-	////  - Some of these, like the primitive topology & input layout, probably won't change
-	////  - Others, like setting shaders, will need to be moved elsewhere later
-	//{
-	//	Graphics::Context->VSSetShader(mat1->GetVertexShader().Get(), 0, 0);
-	//	Graphics::Context->PSSetShader(mat1->GetPixelShader().Get(), 0, 0);
-	//}
 
 	// ImGui init
 	{
@@ -151,19 +146,28 @@ Game::Game()
 
 	// Make the entities
 	{
-		entities.push_back( GameEntity(meshes["helix"], mat1) );
-		entities.push_back( GameEntity(meshes["quad_double_sided"], mat2) );
-		entities.push_back( GameEntity(meshes["cube"], mat1) );
-		entities.push_back( GameEntity(meshes["cube"], mat2) );
-		entities.push_back( GameEntity(meshes["cube"], mat3) );
-
-		int x = 0;
-		for (auto entity : entities)
+		std::string material[] = { "top material", "middle material", 
+			"white material", 
+			"red material", 
+			"purple material", 
+			"fancy material", 
+			"purple material", 
+			"red material", 
+			"white material" };
+		std::string meshesOrder[] = { "cube", "cylinder", "helix", "sphere", "torus", "quad", "quad_double_sided"};
+		for (int y = 0; y < 3; y++)
 		{
-			entity.GetTransform()->MoveAbsolute(x, 0, 10);
-			x += 3.0f;
+			std::string currMaterial = material[y];
+			int x = 0;
+			for (const auto& keys : meshes)
+			{
+				if (y == 2)
+					currMaterial = material[y + x]; 
+				
+				AddEntity(meshesOrder[x], currMaterial).GetTransform()->MoveAbsolute(x * 4, 8 + (y * -4.0f), 10);
+				x++;
+			}
 		}
-		
 	}
 	
 	// Make the cameras
@@ -193,7 +197,7 @@ static ComPtr<ID3D11VertexShader> LoadVertexShader(const wchar_t* path, ComPtr<I
 		0,
 		vertexShader.GetAddressOf()
 	);
-
+	
 	return vertexShader;
 }
 
@@ -224,6 +228,9 @@ void Game::LoadShaders()
 	ComPtr<ID3DBlob> pixelShaderBlob;
 	auto vertexShader = LoadVertexShader(L"VertexShader.cso", vertexShaderBlob);
 	auto pixelShader = LoadPixelShader(L"PixelShader.cso", pixelShaderBlob);
+	auto dbgUVShader = LoadPixelShader(L"DebugUVsPS.cso", pixelShaderBlob);
+	auto dbgNormalShader = LoadPixelShader(L"DebugNormalsPS.cso", pixelShaderBlob);
+	auto customPixelShader = LoadPixelShader(L"CustomPS.cso", pixelShaderBlob);
 
 	// Input layout stuff
 	{
@@ -252,9 +259,12 @@ void Game::LoadShaders()
 	}
 
 	// Material stuff
-	mat1 = std::make_shared<Material>(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), vertexShader, pixelShader);
-	mat2 = std::make_shared<Material>(XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f),vertexShader, pixelShader);
-	mat3 = std::make_shared<Material>(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), vertexShader, pixelShader);
+	materials[ "top material" ] = std::make_shared<Material>(vertexShader, dbgNormalShader);
+	materials[ "middle material" ] = std::make_shared<Material>(vertexShader, dbgUVShader);
+	materials[ "white material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vertexShader, pixelShader);
+	materials[ "red material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 0, 0, 1.0f), vertexShader, pixelShader);
+	materials[ "purple material" ] = std::make_shared<Material>(XMFLOAT4(1.0f,0, 1.0f, 1.0f), vertexShader, pixelShader);
+	materials[ "fancy material" ] = std::make_shared<Material>(vertexShader, customPixelShader);
 }
 
 // --------------------------------------------------------
@@ -265,10 +275,10 @@ void Game::CreateGeometry()
 	MakeMesh("cube", "../../Assets/Meshes/cube.bobj");
 	MakeMesh("cylinder", "../../Assets/Meshes/cylinder.bobj");
 	MakeMesh("helix", "../../Assets/Meshes/helix.bobj");
-	MakeMesh("quad", "../../Assets/Meshes/quad.bobj");
-	MakeMesh("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
 	MakeMesh("sphere", "../../Assets/Meshes/sphere.bobj");
 	MakeMesh("torus", "../../Assets/Meshes/torus.bobj");
+	MakeMesh("quad", "../../Assets/Meshes/quad.bobj");
+	MakeMesh("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
 }
 
 // --------------------------------------------------------
@@ -395,6 +405,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	cameras[ currCam ]->Update( deltaTime );
 
+	psData.elaspedTime = totalTime;
 
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::KeyDown(VK_ESCAPE))

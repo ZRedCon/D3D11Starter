@@ -9,4 +9,5 @@ struct VertexShaderData {
 
 struct PixelColorBuffer {
 	DirectX::XMFLOAT4 color;
+	float elaspedTime;
 };

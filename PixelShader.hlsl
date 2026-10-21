@@ -1,6 +1,7 @@
 cbuffer PixelColorBuffer : register(b0)
 {
     float4 color;
+    float elaspedTime;
 }
 
 // Struct representing the data we expect to receive from earlier pipeline stages
