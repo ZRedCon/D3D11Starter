@@ -49,6 +49,9 @@
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
+static std::wstring ASSETS_PATH = L"../../Assets/";
+#define GetAssetPath(subpath) FixPath(ASSETS_PATH + subpath).c_str()
+
 bool displayDemoPanel = true;
 std::unique_ptr<std::array<float, 4>> backgroundColor = std::make_unique<std::array<float, 4>>();
 char textValue[2048] = "Hello Cruel World!";
@@ -70,6 +73,11 @@ std::vector<GameEntity> entities;
 
 std::vector<std::shared_ptr<Camera>> cameras;
 int currCam = -1;
+
+ComPtr<ID3D11ShaderResourceView> greenScreen;
+ComPtr<ID3D11ShaderResourceView> gracias;
+ComPtr<ID3D11SamplerState> samplerState;
+
 
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
 {
@@ -252,6 +260,7 @@ static ComPtr<ID3D11PixelShader> LoadPixelShader(const wchar_t* path, ComPtr<ID3
 
 	return pixelShader;
 }
+
 // --------------------------------------------------------
 // Loads shaders from compiled shader object (.cso) files
 // and also created the Input Layout that describes our 
@@ -269,6 +278,7 @@ void Game::LoadShaders()
 	auto dbgUVShader = LoadPixelShader(L"DebugUVsPS.cso", pixelShaderBlob);
 	auto dbgNormalShader = LoadPixelShader(L"DebugNormalsPS.cso", pixelShaderBlob);
 	auto customPixelShader = LoadPixelShader(L"CustomPS.cso", pixelShaderBlob);
+	auto greenScreenShader = LoadPixelShader(L"GreenScreen.cso", pixelShaderBlob);
 
 	// Input layout stuff
 	{
@@ -300,9 +310,40 @@ void Game::LoadShaders()
 	materials[ "top material" ] = std::make_shared<Material>(vertexShader, dbgNormalShader);
 	materials[ "middle material" ] = std::make_shared<Material>(vertexShader, dbgUVShader);
 	materials[ "white material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vertexShader, pixelShader);
-	materials[ "red material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 0, 0, 1.0f), vertexShader, pixelShader);
+	materials[ "red material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 0, 0, 1.0f), vertexShader, greenScreenShader);
 	materials[ "purple material" ] = std::make_shared<Material>(XMFLOAT4(1.0f,0, 1.0f, 1.0f), vertexShader, pixelShader);
 	materials[ "fancy material" ] = std::make_shared<Material>(vertexShader, customPixelShader);
+
+	// Texture stuff
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		GetAssetPath(L"Textures/Grassy_ass_me_amigo.png"),
+		0,
+		gracias.GetAddressOf()
+	);
+	CreateWICTextureFromFile(
+		Graphics::Device.Get(),
+		Graphics::Context.Get(),
+		GetAssetPath(L"Textures/DumbFuck.png"),
+		0,
+		greenScreen.GetAddressOf()
+	);
+
+	D3D11_SAMPLER_DESC sampDesc = {};
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	sampDesc.MaxAnisotropy = 16;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	Graphics::Device->CreateSamplerState(&sampDesc, samplerState.GetAddressOf());
+
+	materials["white material"]->AddTextureSRVAndSampler(0, gracias, samplerState);
+	materials["white material"]->SetUVScale(XMFLOAT2(5,5));
+	materials["red material"]->AddTextureSRVAndSampler(0, gracias, samplerState);
+	materials["red material"]->AddTextureSRV(1, greenScreen);
+	materials["purple material"]->AddTextureSRVAndSampler(0, gracias, samplerState);
 }
 
 // --------------------------------------------------------
@@ -477,11 +518,13 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		vsData.world = currentEntity.GetTransform()->GetWorldMatrix();
 
-
 		FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);
 		psData.color = currentEntity.GetMaterial()->GetTint();
+		psData.uvScale = currentEntity.GetMaterial()->GetUVScale();
+		psData.uvOffset = currentEntity.GetMaterial()->GetUVOffset();
 		FillAndBindNextConstantBuffer(&psData, sizeof(psData), D3D11_PIXEL_SHADER, 0);
 
+		currentEntity.GetMaterial()->BindTexturesAndSamplers();
 		currentEntity.Draw();
 	}
 

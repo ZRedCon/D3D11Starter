@@ -1,9 +1,10 @@
 cbuffer PixelColorBuffer : register(b0)
 {
     float4 color;
+    float2 uvScale;
+    float2 uvOffset;
     float elaspedTime;
 }
-
 // Struct representing the data we expect to receive from earlier pipeline stages
 // - Should match the output of our corresponding vertex shader
 // - The name of the struct itself is unimportant
