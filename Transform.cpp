@@ -168,3 +168,25 @@ void Transform::Scale(float x, float y, float z)
 	scale.y *= y;
 	scale.z *= z;
 }
+
+void Transform::Inspector(std::string name)
+{
+	if (ImGui::CollapsingHeader((name + " Transform").c_str()))
+	{
+		ImGui::Indent();
+
+		XMFLOAT3 newPos = GetPosition();
+		ImGui::DragFloat3((name + " Position").c_str(), &newPos.x, 0.01f);
+		SetPosition(newPos);
+
+		XMFLOAT3 newRot = GetPitchYawRoll();
+		ImGui::DragFloat3((name + " Rotation").c_str(), &newRot.x, 0.01f);
+		SetRotation(newRot);
+
+		XMFLOAT3 newScale = GetScale();
+		ImGui::DragFloat3((name + " Scale").c_str(), &newScale.x, 0.01f);
+		SetScale(newScale);
+
+		ImGui::Unindent();
+	}
+}

@@ -68,3 +68,26 @@ void Material::SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader)
 {
 	pixelShader = newPixelShader;
 }
+
+void Material::Inspector(std::string name)
+{
+	if (ImGui::CollapsingHeader((name + " Material").c_str()))
+	{
+		ImGui::Indent();
+
+		ImGui::ColorEdit4((name + " Tint").c_str(), &tint.x);
+		ImGui::DragFloat2((name + " UV Sacle").c_str(), &uvScale.x, 0.05f);
+		ImGui::DragFloat2((name + " UV Offset").c_str(), &uvOffset.x, 0.05f);
+
+		if (ImGui::CollapsingHeader((name + " Textures").c_str()))
+		{
+			for (int i = 0; i < textureSRVs.size(); i++)
+			{
+				if (textureSRVs[i] == nullptr) break;
+				ImGui::Image((void*)(textureSRVs[i].Get()), ImVec2(40.0f, 40.0f));
+			}
+		}
+
+		ImGui::Unindent();
+	}
+}

@@ -318,9 +318,14 @@ void Mesh::Draw()
 		0);						// Offset to add to each index when looking up vertices
 }
 
-const void Mesh::GetGUI()
+void Mesh::Inspector(std::string name)
 {
-	ImGui::Text("Triangles: %i", indexBufferSize / 3);
-	ImGui::Text("Verticies: %i", vertexBufferSize);
-	ImGui::Text("Indices: %i", indexBufferSize);
+	if (ImGui::CollapsingHeader((name + " Mesh").c_str()))
+	{
+		ImGui::Indent();
+		ImGui::Text("%s Triangles: %i", name.c_str(), indexBufferSize / 3);
+		ImGui::Text("%s Verticies: %i", name.c_str(), vertexBufferSize);
+		ImGui::Text("%s Indices: %i", name.c_str(), indexBufferSize);
+		ImGui::Unindent();
+	}
 }

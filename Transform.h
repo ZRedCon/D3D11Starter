@@ -1,5 +1,9 @@
 #pragma once
 #include <DirectXMath.h>
+#include <string>
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
 
 using namespace DirectX;
 
@@ -53,4 +57,6 @@ public:
 	void Rotate(float pitch, float yaw, float roll);
 	void Scale(XMFLOAT3 newScale);
 	void Scale(float x, float y, float z);
+
+	void Inspector(std::string name);
 };

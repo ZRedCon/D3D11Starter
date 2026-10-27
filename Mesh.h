@@ -72,5 +72,6 @@ public:
 	BufPtr GetIndexBuffer();
 	int GetIndexCount();
 	void Draw();
-	const void GetGUI();
+
+	void Inspector(std::string name);
 };

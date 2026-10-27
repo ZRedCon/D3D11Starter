@@ -10,6 +10,10 @@
 #include "Graphics.h"
 #include "Vertex.h"
 
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
+
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
@@ -47,5 +51,7 @@ public:
 	void SetTint(XMFLOAT4 newTint);
 	void SetVertexShader(ComPtr<ID3D11VertexShader> newVertexShader);
 	void SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader);
+
+	void Inspector(std::string name);
 };
 
