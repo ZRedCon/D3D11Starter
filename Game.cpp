@@ -16,6 +16,7 @@
 #include "GameEntity.h"
 #include "Camera.h"
 #include "Material.h"
+#include "Lights.h"
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -77,6 +78,8 @@ int currCam = -1;
 ComPtr<ID3D11ShaderResourceView> greenScreen;
 ComPtr<ID3D11ShaderResourceView> gracias;
 ComPtr<ID3D11SamplerState> samplerState;
+
+Light directionalLight1 = {};
 
 
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
@@ -179,6 +182,17 @@ Game::Game()
 		cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(1, 1, -4)));
 		cameras[ 1 ]->SetFOV( 0.7f );
 		currCam = 0;
+	}
+
+	// Make the light(s)
+	{
+		directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
+		XMVECTOR vector = XMVectorSet(1.0f, -2.0f, 0.2f, 0.0f);
+		XMStoreFloat3(&directionalLight1.Direction, XMVector3Normalize(vector));
+		directionalLight1.Color = XMFLOAT3(1.0f,0.0f,1.0f);
+		directionalLight1.Intensity = 1.0f;
+
+		memcpy(&psData.light, &directionalLight1, sizeof(Light));
 	}
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
+#include "Lights.h"
 
 struct VertexShaderData {
 	DirectX::XMFLOAT4X4 world;
@@ -9,6 +10,7 @@ struct VertexShaderData {
 };
 
 struct PixelColorBuffer {
+	Light light;
 	DirectX::XMFLOAT4 color;
 	DirectX::XMFLOAT2 uvScale;
 	DirectX::XMFLOAT2 uvOffset;
