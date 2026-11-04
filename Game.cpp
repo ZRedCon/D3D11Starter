@@ -83,6 +83,8 @@ std::vector<Light> lights;
 Light directionalLight1 = {};
 Light directionalLight2 = {};
 Light directionalLight3 = {};
+Light pointLight1 = {};
+Light spotLight1 = {};
 
 
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
@@ -159,24 +161,14 @@ Game::Game()
 
 	// Make the entities
 	{
-		std::string material[] = { "top material", "middle material", 
-			"white material", 
-			"white material", 
-			"white material", 
-			"white material", 
-			"white material", 
-			"white material", 
-			"white material" };
+
 		std::string meshesOrder[] = { "cube", "cylinder", "helix", "sphere", "torus", "quad", "quad_double_sided"};
 		for (int y = 0; y < 3; y++)
 		{
-			std::string currMaterial = material[y];
+			std::string currMaterial = "white material";
 			int x = 0;
 			for (const auto& keys : meshes)
 			{
-				if (y == 2)
-					currMaterial = material[y + x]; 
-				
 				AddEntity(meshesOrder[x], currMaterial).GetTransform()->MoveAbsolute(float(x * 4), float(8 + (y * -4.0f)), 10.0f);
 				x++;
 			}
@@ -196,7 +188,7 @@ Game::Game()
 		directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
 		XMVECTOR vector = XMVectorSet(1.0f, -2.0f, 0.2f, 0.0f);
 		XMStoreFloat3(&directionalLight1.Direction, XMVector3Normalize(vector));
-		directionalLight1.Color = XMFLOAT3(1.0f,0.0f,1.0f);
+		directionalLight1.Color = XMFLOAT3(0.4f,0.0f,0.4f);
 		directionalLight1.Intensity = 2.0f;
 		lights.push_back(directionalLight1);
 
@@ -210,15 +202,33 @@ Game::Game()
 		directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
 		vector = XMVectorSet(-3.0f, 0.5f, 6.0f, 0.0f);
 		XMStoreFloat3(&directionalLight3.Direction, XMVector3Normalize(vector));
-		directionalLight3.Color = XMFLOAT3(0.2f, 1.0f, 1.0f);
+		directionalLight3.Color = XMFLOAT3(0.2f, 0.85f, 0.3f);
 		directionalLight3.Intensity = 2.0f;
 		lights.push_back(directionalLight3);
 
-		int numberLights = lights.size();
+		pointLight1.Type = LIGHT_TYPE_POINT;
+		pointLight1.Position = XMFLOAT3(0.0f, 2.0f, 8.0f);
+		pointLight1.Color = XMFLOAT3(0.1f, 0.1f, 1.0f);
+		pointLight1.Intensity = 4.0f;
+		pointLight1.Range = 5.0f;
+		lights.push_back(pointLight1);
+
+		spotLight1.Type = LIGHT_TYPE_SPOT;
+		vector = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+		XMStoreFloat3(&spotLight1.Direction, XMVector3Normalize(vector));
+		spotLight1.Position = XMFLOAT3(10.0f, 2.0f, 3.0f);
+		spotLight1.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
+		spotLight1.Intensity = 10.0f;
+		spotLight1.Range = 20.0f;
+		spotLight1.SpotInnerAngle = XMConvertToRadians(15.0f);
+		spotLight1.SpotOuterAngle = XMConvertToRadians(25.0f);
+		lights.push_back(spotLight1);
+
+		int numberLights = (int)lights.size();
 		if (numberLights > 5)
 			numberLights = 5;
 
-		memcpy(&psData.light, &lights[0], sizeof(Light) * 5);
+		memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
 	}
 }
 
@@ -466,6 +476,17 @@ static void CameraInspector(Camera& camera, std::string name, int index)
 	}
 }
 
+static std::string GetLightType(Light l)
+{
+	switch (l.Type)
+	{
+	case LIGHT_TYPE_DIRECTIONAL: return "DIRECTIONAL";
+	case LIGHT_TYPE_POINT: return "POINT";
+	case LIGHT_TYPE_SPOT: return "SPOT";
+	default: return "Invalid Type, something has gone horribly, horribly wrong!";
+	}
+}
+
 static void BuildUI(float deltaTime)
 {
 	ImGui::Begin("Inspector"); {
@@ -478,11 +499,38 @@ static void BuildUI(float deltaTime)
 			ImGui::Unindent();
 		}
 		if (ImGui::CollapsingHeader("Cameras")) {
+			ImGui::Indent();
 			for (int i = 0; i < cameras.size(); i++) {
 				if (ImGui::CollapsingHeader(("Camera " + std::to_string(i) + ":").c_str())) {
 					CameraInspector(*cameras[i], std::to_string(i), i);
 				}
 			}
+			ImGui::Unindent();
+		}
+		if (ImGui::CollapsingHeader("Lighting")) {
+			ImGui::Indent();
+			if (ImGui::CollapsingHeader("Global Lighting Features")) {
+				ImGui::Indent();
+				ImGui::ColorEdit3("Background", &backgroundColor->at(0));
+				ImGui::ColorEdit3("Ambiant", &psData.ambiantColor.x);
+				ImGui::Unindent();
+			}
+			for (int i = 0; i < lights.size(); i++) {
+				auto name = "Light #" + std::to_string(i);
+				if (ImGui::CollapsingHeader(name.c_str())) {
+					ImGui::Indent();
+					ImGui::LabelText("", ("Type: " + GetLightType(lights[i])).c_str());
+					ImGui::ColorEdit3((name + "'s Color").c_str(), &lights[i].Color.x);
+					ImGui::DragFloat((name + "'s Intensity").c_str(), &lights[i].Intensity, 0.05f, 0.0f, 200.0f);
+					ImGui::Unindent();
+				}
+			}
+			int numberLights = (int)lights.size();
+			if (numberLights > 5)
+				numberLights = 5;
+
+			memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
+			ImGui::Unindent();
 		}
 	} ImGui::End();;
 }

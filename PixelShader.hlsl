@@ -14,33 +14,54 @@ cbuffer PixelColorBuffer : register(b0)
 Texture2D SurfaceTexture  : register(t0);
 SamplerState BasicSampler : register(s0);
 
-float4 lightCalcDiffuse(Light l, float3 normal)
+float4 lightCalcDiffuse(Light l, float3 normal, float3 dirToLight)
 {
-    float3 dirToLight = -l.Direction;
     return AS_4(saturate(dot(normal, dirToLight)) * l.Color * l.Intensity);
 }
 
-float4 lightCalcPhong(Light l, float3 normal, float3 dirToCamera)
+float4 lightCalcPhong(Light l, float3 normal, float3 dirToCamera, float3 dirToLight)
 {
-    float3 refl = reflect(l.Direction, normal);
+    float3 refl = reflect(-dirToLight, normal);
     float RdotV = saturate(dot(refl, dirToCamera));
     return AS_4(pow(RdotV, 256) * l.Color * l.Intensity);
 }
 
-float4 directionalLightTerms(Light l, VertexToPixel input)
+float attenuate(Light l, float3 worldPos)
 {
-    return lightCalcDiffuse(l, input.normal) + lightCalcPhong(l, input.normal, normalize(cameraPosition - input.worldPosition));
+    float dist = distance(l.Position, worldPos);
+    float att = saturate(1.0f - (dist * dist / (l.Range * l.Range)));
+    return att * att;
 }
 
-float4 setOfDirectionalLightTerms(Light l[5], VertexToPixel input)
+float4 directionalLightTerms(Light l, VertexToPixel input)
 {
-    float4 sum = float4(0.0f, 0.0f, 0.0f, 0.0f);
-    for (int i = 0; i < 3; i++)
-    {
-        sum += directionalLightTerms(l[i], input);
-    }
+    float3 dirToLight = -l.Direction;
+    float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
+    return lightCalcDiffuse(l, input.normal, dirToLight) +
+           lightCalcPhong(l, input.normal, dirToCamera, dirToLight);
+}
 
-    return sum;
+float4 pointLightTerms(Light l, VertexToPixel input)
+{
+    float3 dirToLight = normalize(l.Position - input.worldPosition);
+    float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
+    return (lightCalcDiffuse(l, input.normal, dirToLight) +
+            lightCalcPhong(l, input.normal, dirToCamera, dirToLight))
+           * attenuate(l, input.worldPosition);
+}
+
+float4 spotLightTerms(Light l, VertexToPixel input)
+{
+    float3 lightToPixel = normalize(input.worldPosition - l.Position);
+    float pixelAngle = saturate(dot(lightToPixel, l.Direction));
+
+    float cosOuter = cos(l.SpotOuterAngle);
+    float cosInner = cos(l.SpotInnerAngle);
+    float falloffRange = cosOuter - cosInner;
+
+    float spotTerm = saturate((cosOuter - pixelAngle) / falloffRange);
+
+    return pointLightTerms(l, input) * spotTerm;
 }
 
 float4 main(VertexToPixel input) : SV_TARGET
@@ -48,8 +69,24 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.normal = normalize(input.normal);
     float2 adjustedUV = input.uv * uvScale + uvOffset;
     float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, adjustedUV);
-    
     float4 ambientTerm = AS_4(ambiantColor) * surfaceColor * color;
     
-    return ambientTerm + surfaceColor * setOfDirectionalLightTerms(light1, input);
+    float4 sumOfLights = float4(0, 0, 0, 0);
+    for (int i = 0; i < 5; i++)
+    {
+        switch (light1[i].Type)
+        {
+            case LIGHT_TYPE_DIRECTIONAL:
+                sumOfLights += directionalLightTerms(light1[i], input);
+                break;
+            case LIGHT_TYPE_POINT:
+                sumOfLights += pointLightTerms(light1[i], input);
+                break;
+            case LIGHT_TYPE_SPOT:
+                sumOfLights += spotLightTerms(light1[i], input);
+                break;
+        }
+    }
+    
+    return ambientTerm + surfaceColor * sumOfLights;
 }
