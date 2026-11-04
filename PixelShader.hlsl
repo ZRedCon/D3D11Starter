@@ -5,6 +5,7 @@ cbuffer PixelColorBuffer : register(b0)
     float4 color;
     float2 uvScale;
     float2 uvOffset;
+    float3 cameraPosition;
     float elaspedTime;
 }
 

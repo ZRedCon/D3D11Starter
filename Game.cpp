@@ -495,6 +495,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		psData.color = currentEntity.GetMaterial()->GetTint();
 		psData.uvScale = currentEntity.GetMaterial()->GetUVScale();
 		psData.uvOffset = currentEntity.GetMaterial()->GetUVOffset();
+		psData.cameraPosition = cameras[ currCam ]->GetTransform().GetPosition();
 		FillAndBindNextConstantBuffer(&psData, sizeof(psData), D3D11_PIXEL_SHADER, 0);
 
 		currentEntity.GetMaterial()->BindTexturesAndSamplers();

@@ -11,5 +11,6 @@ struct PixelColorBuffer {
 	DirectX::XMFLOAT4 color;
 	DirectX::XMFLOAT2 uvScale;
 	DirectX::XMFLOAT2 uvOffset;
+	DirectX::XMFLOAT3 cameraPosition;
 	float elaspedTime;
 };
