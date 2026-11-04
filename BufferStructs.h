@@ -10,7 +10,7 @@ struct VertexShaderData {
 };
 
 struct PixelColorBuffer {
-	Light light;
+	Light light[5];
 	DirectX::XMFLOAT4 color;
 	DirectX::XMFLOAT2 uvScale;
 	DirectX::XMFLOAT2 uvOffset;

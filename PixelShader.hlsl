@@ -2,7 +2,7 @@
 
 cbuffer PixelColorBuffer : register(b0)
 {
-    Light light1;
+    Light light1[5];
     float4 color;
     float2 uvScale;
     float2 uvOffset;
@@ -27,6 +27,22 @@ float4 lightCalcPhong(Light l, float3 normal, float3 dirToCamera)
     return AS_4(pow(RdotV, 256) * l.Color * l.Intensity);
 }
 
+float4 directionalLightTerms(Light l, VertexToPixel input)
+{
+    return lightCalcDiffuse(l, input.normal) + lightCalcPhong(l, input.normal, normalize(cameraPosition - input.worldPosition));
+}
+
+float4 setOfDirectionalLightTerms(Light l[5], VertexToPixel input)
+{
+    float4 sum = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    for (int i = 0; i < 3; i++)
+    {
+        sum += directionalLightTerms(l[i], input);
+    }
+
+    return sum;
+}
+
 float4 main(VertexToPixel input) : SV_TARGET
 {
     input.normal = normalize(input.normal);
@@ -34,8 +50,6 @@ float4 main(VertexToPixel input) : SV_TARGET
     float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, adjustedUV);
     
     float4 ambientTerm = AS_4(ambiantColor) * surfaceColor * color;
-    float4 diffuseTerm = lightCalcDiffuse(light1, input.normal);
-    float4 phongTerm = lightCalcPhong(light1, input.normal, normalize(cameraPosition - input.worldPosition));
     
-    return ambientTerm + surfaceColor * (diffuseTerm + phongTerm);
+    return ambientTerm + surfaceColor * setOfDirectionalLightTerms(light1, input);
 }

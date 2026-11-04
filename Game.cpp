@@ -79,7 +79,10 @@ ComPtr<ID3D11ShaderResourceView> greenScreen;
 ComPtr<ID3D11ShaderResourceView> gracias;
 ComPtr<ID3D11SamplerState> samplerState;
 
+std::vector<Light> lights;
 Light directionalLight1 = {};
+Light directionalLight2 = {};
+Light directionalLight3 = {};
 
 
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
@@ -96,9 +99,13 @@ static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
 Game::Game()
 {
 	// Setup cornflower blue bg color
-	backgroundColor->at(0) = 0.4f;
-	backgroundColor->at(1) = 0.6f;
-	backgroundColor->at(2) = 0.75f;
+	//backgroundColor->at(0) = 0.4f;
+	//backgroundColor->at(1) = 0.6f;
+	//backgroundColor->at(2) = 0.75f;
+	//backgroundColor->at(3) = 0.0f;
+	backgroundColor->at(0) = 0.01f;
+	backgroundColor->at(1) = 0.02f;
+	backgroundColor->at(2) = 0.03f;
 	backgroundColor->at(3) = 0.0f;
 
 	psData.ambiantColor = XMFLOAT3(0.15f, 0.15f, 0.3f);
@@ -154,11 +161,11 @@ Game::Game()
 	{
 		std::string material[] = { "top material", "middle material", 
 			"white material", 
-			"red material", 
-			"purple material", 
-			"fancy material", 
-			"purple material", 
-			"red material", 
+			"white material", 
+			"white material", 
+			"white material", 
+			"white material", 
+			"white material", 
 			"white material" };
 		std::string meshesOrder[] = { "cube", "cylinder", "helix", "sphere", "torus", "quad", "quad_double_sided"};
 		for (int y = 0; y < 3; y++)
@@ -190,9 +197,28 @@ Game::Game()
 		XMVECTOR vector = XMVectorSet(1.0f, -2.0f, 0.2f, 0.0f);
 		XMStoreFloat3(&directionalLight1.Direction, XMVector3Normalize(vector));
 		directionalLight1.Color = XMFLOAT3(1.0f,0.0f,1.0f);
-		directionalLight1.Intensity = 1.0f;
+		directionalLight1.Intensity = 2.0f;
+		lights.push_back(directionalLight1);
 
-		memcpy(&psData.light, &directionalLight1, sizeof(Light));
+		directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+		vector = XMVectorSet(4.0f, 0.0f, 2.0f, 0.0f);
+		XMStoreFloat3(&directionalLight2.Direction, XMVector3Normalize(vector));
+		directionalLight2.Color = XMFLOAT3(1.0f, 0.7f, 0.0f);
+		directionalLight2.Intensity = 2.0f;
+		lights.push_back(directionalLight2);
+
+		directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+		vector = XMVectorSet(-3.0f, 0.5f, 6.0f, 0.0f);
+		XMStoreFloat3(&directionalLight3.Direction, XMVector3Normalize(vector));
+		directionalLight3.Color = XMFLOAT3(0.2f, 1.0f, 1.0f);
+		directionalLight3.Intensity = 2.0f;
+		lights.push_back(directionalLight3);
+
+		int numberLights = lights.size();
+		if (numberLights > 5)
+			numberLights = 5;
+
+		memcpy(&psData.light, &lights[0], sizeof(Light) * 5);
 	}
 }
 
