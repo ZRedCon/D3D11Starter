@@ -98,6 +98,8 @@ Game::Game()
 	backgroundColor->at(2) = 0.75f;
 	backgroundColor->at(3) = 0.0f;
 
+	psData.ambiantColor = XMFLOAT3(0.1f, 0.1f, 0.25f);
+
 	LoadShaders();
 
 	CreateGeometry();
@@ -480,8 +482,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 
 
-	vsData.view = cameras[currCam]->GetViewMatrix();
-	vsData.projection = cameras[currCam]->GetProjectionMatrix();
+	vsData.view = cameras[ currCam ]->GetViewMatrix();
+	vsData.projection = cameras[ currCam ]->GetProjectionMatrix();
+	psData.cameraPosition = cameras[ currCam ]->GetTransform().GetPosition();
+
 	for (int i = 0; i < entities.size(); i++)
 	{
 		GameEntity& currentEntity = entities[i];
@@ -495,7 +499,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		psData.color = currentEntity.GetMaterial()->GetTint();
 		psData.uvScale = currentEntity.GetMaterial()->GetUVScale();
 		psData.uvOffset = currentEntity.GetMaterial()->GetUVOffset();
-		psData.cameraPosition = cameras[ currCam ]->GetTransform().GetPosition();
 		FillAndBindNextConstantBuffer(&psData, sizeof(psData), D3D11_PIXEL_SHADER, 0);
 
 		currentEntity.GetMaterial()->BindTexturesAndSamplers();

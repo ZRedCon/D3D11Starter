@@ -7,6 +7,7 @@ cbuffer PixelColorBuffer : register(b0)
     float2 uvOffset;
     float3 cameraPosition;
     float elaspedTime;
+    float3 ambiantColor;
 }
 
 Texture2D SurfaceTexture  : register(t0);
@@ -17,5 +18,5 @@ float4 main(VertexToPixel input) : SV_TARGET
 {
     float2 adjustedUV = input.uv * uvScale + uvOffset;
     float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, adjustedUV);
-    return surfaceColor * color;
+    return float4(ambiantColor, 1) * surfaceColor * color;
 }
