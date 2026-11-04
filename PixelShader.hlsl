@@ -20,12 +20,22 @@ float4 lightCalcDiffuse(Light l, float3 normal)
     return AS_4(saturate(dot(normal, dirToLight)) * l.Color * l.Intensity);
 }
 
+float4 lightCalcPhong(Light l, float3 normal, float3 dirToCamera)
+{
+    float3 refl = reflect(l.Direction, normal);
+    float RdotV = saturate(dot(refl, dirToCamera));
+    return AS_4(pow(RdotV, 256) * l.Color * l.Intensity);
+}
+
 float4 main(VertexToPixel input) : SV_TARGET
 {
     input.normal = normalize(input.normal);
     float2 adjustedUV = input.uv * uvScale + uvOffset;
     float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, adjustedUV);
+    
     float4 ambientTerm = AS_4(ambiantColor) * surfaceColor * color;
-    float4 diffuseTerm = lightCalcDiffuse(light1, input.normal) * surfaceColor;
-    return ambientTerm + diffuseTerm;
+    float4 diffuseTerm = lightCalcDiffuse(light1, input.normal);
+    float4 phongTerm = lightCalcPhong(light1, input.normal, normalize(cameraPosition - input.worldPosition));
+    
+    return ambientTerm + surfaceColor * (diffuseTerm + phongTerm);
 }

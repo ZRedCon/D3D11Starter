@@ -104,14 +104,19 @@ void Camera::Update(float dt)
 
 	if (Input::MouseLeftDown())
 	{
+		static const float SENSATIVITY = 0.04f;
+		static const float PTCH_LMT = XM_PIDIV2 - 0.01f;
+
 		float cursorMovementX = float(Input::GetMouseXDelta());
 		float cursorMovementY = float(Input::GetMouseYDelta());
+		float yawDelta = cursorMovementX * SENSATIVITY;
+		float pitchDelta = cursorMovementY * SENSATIVITY;
+		transform->Rotate(pitchDelta, yawDelta, 0);
 
-		XMFLOAT3 rotation = transform->GetPitchYawRoll();
-
-		if (cursorMovementX + rotation.x > XM_PIDIV2) cursorMovementX = XM_PIDIV2;
-		else if (cursorMovementX + rotation.x < -XM_PIDIV2) cursorMovementX = XM_PIDIV2;
-		transform->Rotate(cursorMovementY * 0.05f, cursorMovementX * 0.05f, 0);
+		XMFLOAT3 rot = transform->GetPitchYawRoll();
+		if (rot.x > PTCH_LMT) rot.x = PTCH_LMT;
+		if (rot.x < -PTCH_LMT) rot.x = -PTCH_LMT;
+		transform->SetRotation(rot);
 	}
 
 	UpdateViewMatrix();

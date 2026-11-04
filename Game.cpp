@@ -326,7 +326,7 @@ void Game::LoadShaders()
 	materials[ "top material" ] = std::make_shared<Material>(vertexShader, dbgNormalShader);
 	materials[ "middle material" ] = std::make_shared<Material>(vertexShader, dbgUVShader);
 	materials[ "white material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vertexShader, pixelShader);
-	materials[ "red material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 0, 0, 1.0f), vertexShader, greenScreenShader);
+	materials[ "red material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 0, 0, 1.0f), vertexShader, pixelShader);
 	materials[ "purple material" ] = std::make_shared<Material>(XMFLOAT4(1.0f,0, 1.0f, 1.0f), vertexShader, pixelShader);
 	materials[ "fancy material" ] = std::make_shared<Material>(vertexShader, customPixelShader);
 
