@@ -101,7 +101,7 @@ Game::Game()
 	backgroundColor->at(2) = 0.75f;
 	backgroundColor->at(3) = 0.0f;
 
-	psData.ambiantColor = XMFLOAT3(0.1f, 0.1f, 0.25f);
+	psData.ambiantColor = XMFLOAT3(0.15f, 0.15f, 0.3f);
 
 	LoadShaders();
 
