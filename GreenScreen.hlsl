@@ -1,13 +1,8 @@
+#include "MasterShaderInvludes.hlsli"
+
 Texture2D SurfaceTexture : register(t0);
 Texture2D OverlapTexture : register(t1);
 SamplerState BasicSampler : register(s0);
-
-struct VertexToPixel
-{
-    float4 screenPosition : SV_POSITION;
-    float2 uv : TEXCOORD;
-    float3 normal : NORMAL;
-};
 
 float4 main(VertexToPixel input) : SV_TARGET
 {

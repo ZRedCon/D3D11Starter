@@ -1,3 +1,5 @@
+#include "MasterShaderInvludes.hlsli"
+
 cbuffer BufferStruct : register(b0)
 {
     matrix world;
@@ -5,19 +7,6 @@ cbuffer BufferStruct : register(b0)
     matrix projection;
 }
 
-struct VertexShaderInput
-{ 
-	float3 localPosition : POSITION;
-    float2 uv : TEXCOORD;
-    float3 normal : NORMAL;
-};
-
-struct VertexToPixel
-{
-	float4 screenPosition	: SV_POSITION;
-    float2 uv : TEXCOORD;
-    float3 normal : NORMAL;
-};
 
 VertexToPixel main( VertexShaderInput input )
 {
