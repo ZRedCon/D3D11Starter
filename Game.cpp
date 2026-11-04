@@ -494,6 +494,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->PSSetShader(currentEntity.GetMaterial()->GetPixelShader().Get(), 0, 0);
 
 		vsData.world = currentEntity.GetTransform()->GetWorldMatrix();
+		vsData.worldInvTranspose = currentEntity.GetTransform()->GetWorldMatrix();
 
 		FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);
 		psData.color = currentEntity.GetMaterial()->GetTint();
