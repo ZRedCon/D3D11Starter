@@ -66,6 +66,8 @@ public:
 		unsigned int indicies[], unsigned int numIndicies);
 	Mesh(const char* fileToLoad);
 
+	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
+
 	~Mesh();
 	BufPtr GetVertexBuffer();
 	int GetVertexCount();
