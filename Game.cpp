@@ -52,6 +52,7 @@ using namespace Microsoft::WRL;
 
 static std::wstring ASSETS_PATH = L"../../Assets/";
 #define GetAssetPath(subpath) FixPath(ASSETS_PATH + subpath).c_str()
+#define DeviceAndContextGet Graphics::Device.Get(), Graphics::Context.Get()
 
 bool displayDemoPanel = true;
 std::unique_ptr<std::array<float, 4>> backgroundColor = std::make_unique<std::array<float, 4>>();
@@ -124,7 +125,7 @@ Game::Game()
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGui_ImplWin32_Init(Window::Handle());
-		ImGui_ImplDX11_Init(Graphics::Device.Get(), Graphics::Context.Get());
+		ImGui_ImplDX11_Init(DeviceAndContextGet);
 
 		// Styles
 #if defined(DARKMODE)
@@ -161,11 +162,10 @@ Game::Game()
 
 	// Make the entities
 	{
-
 		std::string meshesOrder[] = { "cube", "cylinder", "helix", "sphere", "torus", "quad", "quad_double_sided"};
 		for (int y = 0; y < 3; y++)
 		{
-			std::string currMaterial = "white material";
+			std::string currMaterial = "cobblestone material";
 			int x = 0;
 			for (const auto& keys : meshes)
 			{
@@ -370,18 +370,17 @@ void Game::LoadShaders()
 	materials[ "red material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 0, 0, 1.0f), vertexShader, pixelShader);
 	materials[ "purple material" ] = std::make_shared<Material>(XMFLOAT4(1.0f,0, 1.0f, 1.0f), vertexShader, pixelShader);
 	materials[ "fancy material" ] = std::make_shared<Material>(vertexShader, customPixelShader);
+	materials[ "cobblestone material" ] = std::make_shared<Material>(vertexShader, pixelShader);
 
 	// Texture stuff
 	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
+		DeviceAndContextGet,
 		GetAssetPath(L"Textures/Grassy_ass_me_amigo.png"),
 		0,
 		gracias.GetAddressOf()
 	);
 	CreateWICTextureFromFile(
-		Graphics::Device.Get(),
-		Graphics::Context.Get(),
+		DeviceAndContextGet,
 		GetAssetPath(L"Textures/DumbFuck.png"),
 		0,
 		greenScreen.GetAddressOf()
@@ -396,11 +395,36 @@ void Game::LoadShaders()
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	Graphics::Device->CreateSamplerState(&sampDesc, samplerState.GetAddressOf());
 
-	materials["white material"]->AddTextureSRVAndSampler(0, gracias, samplerState);
-	materials["white material"]->SetUVScale(XMFLOAT2(5,5));
-	materials["red material"]->AddTextureSRVAndSampler(0, gracias, samplerState);
-	materials["red material"]->AddTextureSRV(1, greenScreen);
-	materials["purple material"]->AddTextureSRVAndSampler(0, gracias, samplerState);
+	
+
+	// Normals and tangents for materials
+	ComPtr<ID3D11ShaderResourceView> cobblestone;
+	ComPtr<ID3D11ShaderResourceView> cobblestoneNormals;
+	ComPtr<ID3D11ShaderResourceView> flatNormals;
+
+	CreateWICTextureFromFile(DeviceAndContextGet,
+		GetAssetPath(L"Textures/Textures with Normal Maps/cobblestone.png"), 0, cobblestone.GetAddressOf());
+	CreateWICTextureFromFile(DeviceAndContextGet,
+		GetAssetPath(L"Textures/Textures with Normal Maps/cobblestone_normals.png"), 0, cobblestoneNormals.GetAddressOf());
+	CreateWICTextureFromFile(DeviceAndContextGet,
+		GetAssetPath(L"Textures/Textures with Normal Maps/flat_normals.png"), 0, flatNormals.GetAddressOf());
+	
+	materials["white material"]->
+		AddTextureSRVAndSampler(0, gracias, samplerState)
+		.SetUVScale(XMFLOAT2(5, 5))
+		.AddTextureSRV(1, flatNormals);
+
+	materials["red material"]->
+		AddTextureSRVAndSampler(0, gracias, samplerState)
+		.AddTextureSRV(1, flatNormals);
+
+	materials["purple material"]->
+		AddTextureSRVAndSampler(0, gracias, samplerState)
+		.AddTextureSRV(1, flatNormals);
+
+	materials["cobblestone material"]->
+		AddTextureSRVAndSampler(0, cobblestone, samplerState)
+		.AddTextureSRV(1, cobblestoneNormals);
 }
 
 // --------------------------------------------------------
@@ -587,7 +611,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->PSSetShader(currentEntity.GetMaterial()->GetPixelShader().Get(), 0, 0);
 
 		vsData.world = currentEntity.GetTransform()->GetWorldMatrix();
-		vsData.worldInvTranspose = currentEntity.GetTransform()->GetWorldMatrix();
+		vsData.worldInvTranspose = currentEntity.GetTransform()->GetWorldInverseTransposeMatrix();
 
 		FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);
 		psData.color = currentEntity.GetMaterial()->GetTint();

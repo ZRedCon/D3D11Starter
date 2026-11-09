@@ -13,20 +13,23 @@ Material::Material(XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexSha
 Material::Material(ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader) :
 	Material(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), startVertexShader, startPixelShader) {}
 
-void Material::AddTextureSRVAndSampler(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv, ComPtr<ID3D11SamplerState> sampler)
+Material& Material::AddTextureSRVAndSampler(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv, ComPtr<ID3D11SamplerState> sampler)
 {
 	AddTextureSRV(slot, srv);
 	AddSampler(slot, sampler);
+	return *this;
 }
 
-void Material::AddTextureSRV(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv)
+Material& Material::AddTextureSRV(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv)
 {
 	textureSRVs[ slot ] = srv;
+	return *this;
 }
 
-void Material::AddSampler(unsigned int slot, ComPtr<ID3D11SamplerState> sampler)
+Material& Material::AddSampler(unsigned int slot, ComPtr<ID3D11SamplerState> sampler)
 {
 	samplers[ slot ] = sampler;
+	return *this;
 }
 
 void Material::BindTexturesAndSamplers()
@@ -35,7 +38,7 @@ void Material::BindTexturesAndSamplers()
 		Graphics::Context->PSSetShaderResources(i, 1, textureSRVs[ i ].GetAddressOf());
 
 	for (int i = 0; i < samplers.size(); i++)
-		Graphics::Context->PSSetSamplers(i, 1, samplers[ 0 ].GetAddressOf());
+		Graphics::Context->PSSetSamplers(i, 1, samplers[ i ].GetAddressOf());
 }
 
 XMFLOAT2 Material::GetUVScale() const { return uvScale; }
@@ -44,29 +47,34 @@ XMFLOAT4 Material::GetTint() const { return tint; }
 ComPtr<ID3D11VertexShader> Material::GetVertexShader() const { return vertexShader; }
 ComPtr<ID3D11PixelShader> Material::GetPixelShader() const { return pixelShader; }
 
-void Material::SetUVScale(XMFLOAT2 newScale)
+Material& Material::SetUVScale(XMFLOAT2 newScale)
 {
 	uvScale = newScale;
+	return *this;
 }
 
-void Material::SetUVOffset(XMFLOAT2 newOffset)
+Material& Material::SetUVOffset(XMFLOAT2 newOffset)
 {
 	uvOffset = newOffset;
+	return *this;
 }
 
-void Material::SetTint(XMFLOAT4 newTint)
+Material& Material::SetTint(XMFLOAT4 newTint)
 {
 	tint = newTint;
+	return *this;
 }
 
-void Material::SetVertexShader(ComPtr<ID3D11VertexShader> newVertexShader)
+Material& Material::SetVertexShader(ComPtr<ID3D11VertexShader> newVertexShader)
 {
 	vertexShader = newVertexShader;
+	return *this;
 }
 
-void Material::SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader)
+Material& Material::SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader)
 {
 	pixelShader = newPixelShader;
+	return *this;
 }
 
 void Material::Inspector(std::string name)

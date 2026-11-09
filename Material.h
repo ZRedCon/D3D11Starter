@@ -34,9 +34,9 @@ public:
 	Material(XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
 	Material(ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
 	
-	void AddTextureSRVAndSampler(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv, ComPtr<ID3D11SamplerState> sampler);
-	void AddTextureSRV(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv);
-	void AddSampler(unsigned int slot, ComPtr<ID3D11SamplerState> sampler);
+	Material& AddTextureSRVAndSampler(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv, ComPtr<ID3D11SamplerState> sampler);
+	Material& AddTextureSRV(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv);
+	Material& AddSampler(unsigned int slot, ComPtr<ID3D11SamplerState> sampler);
 
 	void BindTexturesAndSamplers();
 
@@ -46,11 +46,11 @@ public:
 	ComPtr<ID3D11VertexShader> GetVertexShader() const;
 	ComPtr<ID3D11PixelShader> GetPixelShader() const;
 
-	void SetUVScale(XMFLOAT2 newScale);
-	void SetUVOffset(XMFLOAT2 newOffset);
-	void SetTint(XMFLOAT4 newTint);
-	void SetVertexShader(ComPtr<ID3D11VertexShader> newVertexShader);
-	void SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader);
+	Material& SetUVScale(XMFLOAT2 newScale);
+	Material& SetUVOffset(XMFLOAT2 newOffset);
+	Material& SetTint(XMFLOAT4 newTint);
+	Material& SetVertexShader(ComPtr<ID3D11VertexShader> newVertexShader);
+	Material& SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader);
 
 	void Inspector(std::string name);
 };

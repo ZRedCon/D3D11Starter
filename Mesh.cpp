@@ -43,6 +43,7 @@ void Mesh::CreateBuffers(Vertex vertices[], unsigned int numVertices, unsigned i
 Mesh::Mesh(Vertex vertices[], unsigned int numVertices,
 	unsigned int indicies[], unsigned int numIndicies)
 {
+	CalculateTangents(vertices, numVertices, indicies, numIndicies);
 	CreateBuffers(vertices, numVertices, indicies, numIndicies);
 }
 
@@ -277,6 +278,7 @@ Mesh::Mesh(const char* fileToLoad)
 	// Close the file
 	obj.close();
 
+	CalculateTangents(&finalVertices[0], unsigned int(finalVertices.size()), &finalIndices[0], unsigned int(finalIndices.size()));
 	// NEXT: Create the actual buffers!
 	CreateBuffers(&finalVertices[ 0 ], unsigned int(finalVertices.size()), &finalIndices[ 0 ], unsigned int(finalIndices.size()));
 }
