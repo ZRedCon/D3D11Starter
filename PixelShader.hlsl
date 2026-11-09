@@ -38,16 +38,16 @@ float4 directionalLightTerms(Light l, VertexToPixel input)
 {
     float3 dirToLight = -l.Direction;
     float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
-    return lightCalcDiffuse(l, input.normal, dirToLight) +
-           lightCalcPhong(l, input.normal, dirToCamera, dirToLight);
+    float4 diffuse = lightCalcDiffuse(l, input.normal, dirToLight);
+    return diffuse + lightCalcPhong(l, input.normal, dirToCamera, dirToLight) * any(diffuse.rgb);
 }
 
 float4 pointLightTerms(Light l, VertexToPixel input)
 {
     float3 dirToLight = normalize(l.Position - input.worldPosition);
     float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
-    return (lightCalcDiffuse(l, input.normal, dirToLight) +
-            lightCalcPhong(l, input.normal, dirToCamera, dirToLight))
+    float4 diffuse = lightCalcDiffuse(l, input.normal, dirToLight);
+    return (diffuse + lightCalcPhong(l, input.normal, dirToCamera, dirToLight) * any(diffuse.rgb))
            * attenuate(l, input.worldPosition);
 }
 
