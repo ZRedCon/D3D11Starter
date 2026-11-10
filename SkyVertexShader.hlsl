@@ -15,7 +15,7 @@ SkyVertexToPixel main(VertexShaderInput input)
     viewNoTranslation._24 = 0;
     viewNoTranslation._34 = 0;
     
-    output.position = mul(projectionMatrix, mul(viewMatrix, AS_4(input.localPosition)));
+    output.position = mul(projectionMatrix, mul(viewNoTranslation, AS_4(input.localPosition)));
     output.position = output.position.xyww;
     
     output.sampleDir = input.localPosition;

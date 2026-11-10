@@ -127,6 +127,11 @@ void Sky::Draw()
 	Graphics::Context->VSSetShader(vs.Get(), 0, 0);
 	Graphics::Context->PSSetShader(ps.Get(), 0, 0);
 
-	Graphics::Context->PSSetSamplers(0, 1, &sampler);
-	Graphics::Context->PSSetShaderResources(0, 1, &srv);
+	Graphics::Context->PSSetSamplers(0, 1, sampler.GetAddressOf());
+	Graphics::Context->PSSetShaderResources(0, 1, srv.GetAddressOf());
+
+	mesh->Draw();
+
+	Graphics::Context->RSSetState(0);
+	Graphics::Context->OMSetDepthStencilState(0, 0);
 }

@@ -31,6 +31,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
+#include "Sky.h"
 
 // The Color mode for the project: (DARKMODE / LIGHTMODE)
 #define DARKMODE
@@ -45,6 +46,7 @@
 #define ImGui_Window(windowName, block) ImGui::Begin(windowName); { block } ImGui::End();
 
 #define MakeMesh(name, path) meshes[name] = std::make_shared<Mesh>(FixPath( path ).c_str());
+#define MakeSkyPaths(path) { FixPath(ASSETS_PATH + path + L"right.png"), FixPath(ASSETS_PATH + path + L"left.png"), FixPath(ASSETS_PATH + path + L"up.png"), FixPath(ASSETS_PATH + path + L"down.png"), FixPath(ASSETS_PATH + path + L"front.png"), FixPath(ASSETS_PATH + path + L"back.png") }
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -86,6 +88,8 @@ Light directionalLight2 = {};
 Light directionalLight3 = {};
 Light pointLight1 = {};
 Light spotLight1 = {};
+
+std::shared_ptr<Sky> sky;
 
 
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
@@ -439,6 +443,25 @@ void Game::CreateGeometry()
 	MakeMesh("torus", "../../Assets/Meshes/torus.bobj");
 	MakeMesh("quad", "../../Assets/Meshes/quad.bobj");
 	MakeMesh("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
+
+	std::wstring skyPaths[6] = MakeSkyPaths(L"Textures/Skies/Planet/");
+	//{
+	//	FixPath(L"Textures/Skies/Clouds Blue/right.png"),
+	//	FixPath(L"Textures/Skies/Clouds Blue/left.png"),
+	//	FixPath(L"Textures/Skies/Clouds Blue/up.png"),
+	//	FixPath(L"Textures/Skies/Clouds Blue/down.png"),
+	//	FixPath(L"Textures/Skies/Clouds Blue/front.png"),
+	//	FixPath(L"Textures/Skies/Clouds Blue/back.png")
+	//};
+
+	ComPtr<ID3DBlob> skyVSBlob;
+	ComPtr<ID3DBlob> skyPSBlob;
+	sky = std::make_shared<Sky>(
+		meshes["cube"],
+		samplerState,
+		LoadVertexShader(L"SkyVertexShader.cso", skyVSBlob),
+		LoadPixelShader(L"SkyPixelShader.cso", skyPSBlob),
+		skyPaths);
 }
 
 // --------------------------------------------------------
@@ -621,6 +644,15 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		currentEntity.GetMaterial()->BindTexturesAndSamplers();
 		currentEntity.Draw();
+	}
+
+	{
+		SkyVSData skyData = {};
+		skyData.view = cameras[currCam]->GetViewMatrix();
+		skyData.projection = cameras[currCam]->GetProjectionMatrix();
+		FillAndBindNextConstantBuffer(&skyData, sizeof(skyData), D3D11_VERTEX_SHADER, 0);
+
+		sky->Draw();
 	}
 
 	// ImGui Drawing
