@@ -13,6 +13,12 @@
 // Macro values
 #define UNGAMMA_CORRECTION_EXPONENT     2.2f
 #define GAMMA_CORRECTION_EXPONENT       (1.0f / UNGAMMA_CORRECTION_EXPONENT)
+#define MIN_ROUGHNESS                   0.0000001f
+
+// I could not figure out how to do this otherwise
+#define TAU                             6.28318530f
+#define PI                              3.14159265f
+#define HALF_PI                         1.57079632f
 
 struct VertexShaderInput
 {
@@ -55,12 +61,61 @@ float4 lightCalcDiffuse(Light l, float3 normal, float3 dirToLight)
     return AS_4(saturate(dot(normal, dirToLight)) * l.Color * l.Intensity);
 }
 
+//deprecated
 float4 lightCalcPhong(Light l, float3 normal, float3 dirToCamera, float3 dirToLight)
 {
     float3 refl = reflect(-dirToLight, normal);
     float RdotV = saturate(dot(refl, dirToCamera));
     return AS_4(pow(RdotV, 256) * l.Color * l.Intensity);
 }
+
+
+float cookTorranceD(float3 normal, float3 halfAngle, float roughness)
+{
+    float NdotH = saturate(dot(normal, halfAngle));
+    float NDHSquared = NdotH * NdotH;
+    float alpha = roughness * roughness;
+    float alphaSquared = max(alpha * alpha, MIN_ROUGHNESS);
+    
+    float denomRoot2 = NDHSquared * (alphaSquared - 1) + 1;
+    return alphaSquared / (PI * denomRoot2 * denomRoot2);
+}
+
+float cookTorranceG(float3 normal, float3 v, float roughness)
+{
+    float k = pow(roughness + 1, 2) / 8.0f;
+    float NdotV = saturate(dot(normal, v));
+    return 1 / (NdotV * (1 - k) + k);
+}
+
+float3 cookTorranceF(float3 v, float3 halfAngle, float f0)
+{
+    float VdotH = saturate(dot(v, halfAngle));
+    return f0 + (1 - f0) * pow(1 - VdotH, 5);
+}
+
+float4 lightCalcCookTorrence(
+        float3 normal, float3 v,
+        float3 l, float roughness,
+        float3 surfaceRGB, float metal,
+        float3 halfAngle)
+{
+    float f0 = lerp(0.04, surfaceRGB, metal);
+    
+    float  D = cookTorranceD(normal, halfAngle, roughness);
+    float3 F = cookTorranceF(v, halfAngle, f0);
+    float  G = cookTorranceG(normal, v, roughness) * cookTorranceG(normal, l, roughness);
+
+    float3 specularResult = (D * F * G) / 4;
+    
+    return specularResult * saturate(dot(normal, l));
+}
+
+float3 diffuseEnergyConserve(float3 diffuse, float3 f, float metal)
+{
+    return diffuse * (1 - F) * (1 - metal);
+}
+
 
 float attenuate(Light l, float3 worldPos)
 {
@@ -102,12 +157,12 @@ float4 spotLightTerms(Light l, VertexToPixel input, float3 cameraPosition)
 
 inline float4 gammaCorrect(float4 color)
 {
-    return pow(color, GAMMA_CORRECTION_EXPONENT);
+    return float4(pow(color.rgb, GAMMA_CORRECTION_EXPONENT), color.a);
 }
 
 inline float4 unGammaCorrect(float4 color)
 {
-    return pow(color, UNGAMMA_CORRECTION_EXPONENT);
+    return float4(pow(color.rgb, UNGAMMA_CORRECTION_EXPONENT), color.a);
 }
 
 #endif

@@ -11,13 +11,14 @@ cbuffer PixelColorBuffer : register(b0)
     float3 ambiantColor;
 }
 
-Texture2D SurfaceTexture  : register(t0);
-Texture2D NormalMap : register(t1);
-SamplerState BasicSampler : register(s0);
+Texture2D SurfaceTexture    : register(t0);
+Texture2D NormalMap         : register(t1);
+Texture2D RoughnessMap      : register(t2);
+Texture2D MetalnessMap      : register(t3);
+SamplerState BasicSampler   : register(s0);
 
 float4 main(VertexToPixel input) : SV_TARGET
 {
-    //input.normal = normalize(input.normal);
     float2 adjustedUV = input.uv * uvScale + uvOffset;
     
     float3 unpackedNormals = normalize(NormalMap.Sample(BasicSampler, adjustedUV).rgb * 2.0f - 1.0f);
@@ -26,6 +27,9 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 biTangents = cross(tangents, normals);
     float3x3 tanBiNorms = float3x3(tangents, biTangents, normals);
     input.normal = mul(unpackedNormals, tanBiNorms);
+    
+    float roughness = RoughnessMap.Sample(BasicSampler, adjustedUV).r;
+    float metalness = MetalnessMap.Sample(BasicSampler, adjustedUV).r;
     
     float4 surfaceColor = SampleTexture(SurfaceTexture, BasicSampler, adjustedUV);
     float4 ambientTerm = AS_4(ambiantColor) * surfaceColor * color;
