@@ -43,4 +43,54 @@ struct Light
     float2 Padding;
 };
 
+float4 lightCalcDiffuse(Light l, float3 normal, float3 dirToLight)
+{
+    return AS_4(saturate(dot(normal, dirToLight)) * l.Color * l.Intensity);
+}
+
+float4 lightCalcPhong(Light l, float3 normal, float3 dirToCamera, float3 dirToLight)
+{
+    float3 refl = reflect(-dirToLight, normal);
+    float RdotV = saturate(dot(refl, dirToCamera));
+    return AS_4(pow(RdotV, 256) * l.Color * l.Intensity);
+}
+
+float attenuate(Light l, float3 worldPos)
+{
+    float dist = distance(l.Position, worldPos);
+    float att = saturate(1.0f - (dist * dist / (l.Range * l.Range)));
+    return att * att;
+}
+
+float4 directionalLightTerms(Light l, VertexToPixel input)
+{
+    float3 dirToLight = -l.Direction;
+    float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
+    float4 diffuse = lightCalcDiffuse(l, input.normal, dirToLight);
+    return diffuse + lightCalcPhong(l, input.normal, dirToCamera, dirToLight) * any(diffuse.rgb);
+}
+
+float4 pointLightTerms(Light l, VertexToPixel input)
+{
+    float3 dirToLight = normalize(l.Position - input.worldPosition);
+    float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
+    float4 diffuse = lightCalcDiffuse(l, input.normal, dirToLight);
+    return (diffuse + lightCalcPhong(l, input.normal, dirToCamera, dirToLight) * any(diffuse.rgb))
+           * attenuate(l, input.worldPosition);
+}
+
+float4 spotLightTerms(Light l, VertexToPixel input)
+{
+    float3 lightToPixel = normalize(input.worldPosition - l.Position);
+    float pixelAngle = saturate(dot(lightToPixel, l.Direction));
+
+    float cosOuter = cos(l.SpotOuterAngle);
+    float cosInner = cos(l.SpotInnerAngle);
+    float falloffRange = cosOuter - cosInner;
+
+    float spotTerm = saturate((cosOuter - pixelAngle) / falloffRange);
+
+    return pointLightTerms(l, input) * spotTerm;
+}
+
 #endif
