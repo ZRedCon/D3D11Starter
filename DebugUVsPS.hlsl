@@ -1,4 +1,4 @@
-#include "MasterShaderInvludes.hlsli"
+#include "MasterShaderIncludes.hlsli"
 
 cbuffer PixelColorBuffer : register(b0)
 {

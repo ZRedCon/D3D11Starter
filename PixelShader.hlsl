@@ -1,4 +1,4 @@
-#include "MasterShaderInvludes.hlsli"
+#include "MasterShaderIncludes.hlsli"
 
 cbuffer PixelColorBuffer : register(b0)
 {
@@ -27,7 +27,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3x3 tanBiNorms = float3x3(tangents, biTangents, normals);
     input.normal = mul(unpackedNormals, tanBiNorms);
     
-    float4 surfaceColor = SurfaceTexture.Sample(BasicSampler, adjustedUV);
+    float4 surfaceColor = SampleTexture(SurfaceTexture, BasicSampler, adjustedUV);
     float4 ambientTerm = AS_4(ambiantColor) * surfaceColor * color;
     
     float4 sumOfLights = float4(0, 0, 0, 0);
@@ -36,16 +36,16 @@ float4 main(VertexToPixel input) : SV_TARGET
         switch (light1[i].Type)
         {
             case LIGHT_TYPE_DIRECTIONAL:
-                sumOfLights += directionalLightTerms(light1[i], input);
+                sumOfLights += directionalLightTerms(light1[i], input, cameraPosition);
                 break;
             case LIGHT_TYPE_POINT:
-                sumOfLights += pointLightTerms(light1[i], input);
+                sumOfLights += pointLightTerms(light1[i], input, cameraPosition);
                 break;
             case LIGHT_TYPE_SPOT:
-                sumOfLights += spotLightTerms(light1[i], input);
+                sumOfLights += spotLightTerms(light1[i], input, cameraPosition);
                 break;
         }
     }
     
-    return ambientTerm + surfaceColor * sumOfLights;
+    return gammaCorrect(ambientTerm + surfaceColor * sumOfLights);
 }

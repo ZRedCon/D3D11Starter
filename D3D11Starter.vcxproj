@@ -260,7 +260,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="MasterShaderInvludes.hlsli" />
+    <None Include="MasterShaderIncludes.hlsli" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

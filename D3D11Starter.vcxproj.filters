@@ -178,7 +178,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="MasterShaderInvludes.hlsli">
+    <None Include="MasterShaderIncludes.hlsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

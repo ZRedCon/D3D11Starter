@@ -1,11 +1,18 @@
 #ifndef __GGP_SHADER_INCLUDES__
 #define __GGP_SHADER_INCLUDES__
 
+// Macro functions / operations
 #define AS_4(f3) float4(f3, 1)
+#define SampleTexture(texture, sampler, uvmap) unGammaCorrect(texture.Sample(sampler, uvmap))
 
+// Pseudo-enum for light types
 #define LIGHT_TYPE_DIRECTIONAL	0
 #define LIGHT_TYPE_POINT		1
 #define LIGHT_TYPE_SPOT			2
+
+// Macro values
+#define UNGAMMA_CORRECTION_EXPONENT     2.2f
+#define GAMMA_CORRECTION_EXPONENT       (1.0f / UNGAMMA_CORRECTION_EXPONENT)
 
 struct VertexShaderInput
 {
@@ -62,7 +69,7 @@ float attenuate(Light l, float3 worldPos)
     return att * att;
 }
 
-float4 directionalLightTerms(Light l, VertexToPixel input)
+float4 directionalLightTerms(Light l, VertexToPixel input, float3 cameraPosition)
 {
     float3 dirToLight = -l.Direction;
     float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
@@ -70,7 +77,7 @@ float4 directionalLightTerms(Light l, VertexToPixel input)
     return diffuse + lightCalcPhong(l, input.normal, dirToCamera, dirToLight) * any(diffuse.rgb);
 }
 
-float4 pointLightTerms(Light l, VertexToPixel input)
+float4 pointLightTerms(Light l, VertexToPixel input, float3 cameraPosition)
 {
     float3 dirToLight = normalize(l.Position - input.worldPosition);
     float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
@@ -79,7 +86,7 @@ float4 pointLightTerms(Light l, VertexToPixel input)
            * attenuate(l, input.worldPosition);
 }
 
-float4 spotLightTerms(Light l, VertexToPixel input)
+float4 spotLightTerms(Light l, VertexToPixel input, float3 cameraPosition)
 {
     float3 lightToPixel = normalize(input.worldPosition - l.Position);
     float pixelAngle = saturate(dot(lightToPixel, l.Direction));
@@ -90,7 +97,17 @@ float4 spotLightTerms(Light l, VertexToPixel input)
 
     float spotTerm = saturate((cosOuter - pixelAngle) / falloffRange);
 
-    return pointLightTerms(l, input) * spotTerm;
+    return pointLightTerms(l, input, cameraPosition) * spotTerm;
+}
+
+inline float4 gammaCorrect(float4 color)
+{
+    return pow(color, GAMMA_CORRECTION_EXPONENT);
+}
+
+inline float4 unGammaCorrect(float4 color)
+{
+    return pow(color, UNGAMMA_CORRECTION_EXPONENT);
 }
 
 #endif
