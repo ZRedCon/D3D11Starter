@@ -47,5 +47,6 @@ float4 main(VertexToPixel input) : SV_TARGET
         }
     }
     
+    
     return gammaCorrect(ambientTerm + surfaceColor * sumOfLights);
 }
