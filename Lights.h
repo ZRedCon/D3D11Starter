@@ -19,8 +19,40 @@ struct Light
 	DirectX::XMFLOAT2	Padding;
 };
 
-class Lights
+class LightObject
 {
+private:
+	Light light{};
 
+public:
+	LightObject(int type);
+
+	LightObject(const LightObject& other);
+	LightObject(const Light& other);
+
+	LightObject& operator=(const LightObject& right);
+	LightObject& operator=(const Light& right);
+
+	LightObject& SetRange(float range);
+	LightObject& SetIntensity(float intensity);
+
+	LightObject& SetPadding(float x, float y);
+	LightObject& SetPadding(DirectX::XMFLOAT2 padding);
+
+	LightObject& SetDirection(float x, float y, float z);
+	LightObject& SetDirection(DirectX::XMFLOAT3 direction);
+
+	LightObject& SetPosition(float x, float y, float z);
+	LightObject& SetPosition(DirectX::XMFLOAT3 position);
+
+	LightObject& SetColor(float r, float g, float b);
+	LightObject& SetColor(DirectX::XMFLOAT3 color);
+
+	LightObject& SetSpotAngles(float inner, float outer);
+	LightObject& SetSpotAnglesDegrees(float inner, float outer);
+ 	LightObject& SetSpotInnerAngle(float innerAngle);
+	LightObject& SetSpotOuterAngle(float outerAngle);
+
+	operator Light() const;
 };
 

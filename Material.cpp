@@ -13,14 +13,24 @@ Material::Material(XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexSha
 Material::Material(ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader) :
 	Material(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), startVertexShader, startPixelShader) {}
 
-Material& Material::AddTextureSRVAndSampler(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv, ComPtr<ID3D11SamplerState> sampler)
+Material& Material::StorePBRTextures(SRVPtr albedo, SRVPtr normal, SRVPtr roughness, SRVPtr metallic)
+{
+	AddTextureSRV(0, albedo);
+	AddTextureSRV(1, normal);
+	AddTextureSRV(2, roughness);
+	AddTextureSRV(3, metallic);
+
+	return *this;
+}
+
+Material& Material::AddTextureSRVAndSampler(unsigned int slot, SRVPtr srv, ComPtr<ID3D11SamplerState> sampler)
 {
 	AddTextureSRV(slot, srv);
 	AddSampler(slot, sampler);
 	return *this;
 }
 
-Material& Material::AddTextureSRV(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv)
+Material& Material::AddTextureSRV(unsigned int slot, SRVPtr srv)
 {
 	textureSRVs[ slot ] = srv;
 	return *this;

@@ -29,11 +29,11 @@ float4 main(VertexToPixel input) : SV_TARGET
     input.normal = mul(unpackedNormals, tanBiNorms);
     
     float roughness = 0.5; //RoughnessMap.Sample(BasicSampler, adjustedUV).r;
-    float metalness = 0.5; //MetalnessMap.Sample(BasicSampler, adjustedUV).r;
+    float metalness = 1.0; //MetalnessMap.Sample(BasicSampler, adjustedUV).r;
     float4 surfaceColor = SampleTexture(SurfaceTexture, BasicSampler, adjustedUV) * AS_4(color.rgb);
-    float3 f0 = lerp(0.04, surfaceColor, metalness) * (1 - metalness);
+    float3 f0 = lerp(0.04, surfaceColor.rgb, metalness);
     
-    float3 ambientTerm = ambiantColor * surfaceColor.rgb;
+    float3 ambientTerm = ambiantColor * surfaceColor.rgb * (1 - metalness);
     
     float3 sumOfLights = float3(0, 0, 0);
     for (int i = 0; i < 5; i++)

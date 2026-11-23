@@ -7,7 +7,6 @@
 #include "Mesh.h"
 #include "BufferStructs.h"
 
-
 #include <DirectXMath.h>
 
 #include "ImGui/imgui.h"
@@ -17,6 +16,7 @@
 #include "Camera.h"
 #include "Material.h"
 #include "Lights.h"
+#include "Texture2D.h"
 
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
@@ -97,7 +97,6 @@ static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
 	entities.push_back(GameEntity(meshes[ nameOfMesh ], materials[ nameOfMaterial ]));
 	return entities.back();
 }
-
 
 // --------------------------------------------------------
 // The constructor is called after the window and graphics API
@@ -189,48 +188,40 @@ Game::Game()
 
 	// Make the light(s)
 	{
-		directionalLight1.Type = LIGHT_TYPE_DIRECTIONAL;
-		XMVECTOR vector = XMVectorSet(1.0f, -2.0f, 0.2f, 0.0f);
-		XMStoreFloat3(&directionalLight1.Direction, XMVector3Normalize(vector));
-		directionalLight1.Color = XMFLOAT3(0.4f,0.0f,0.4f);
-		directionalLight1.Intensity = 2.0f;
-		lights.push_back(directionalLight1);
+		LightObject l0 = LightObject(LIGHT_TYPE_DIRECTIONAL)
+			.SetDirection(1.0f, -2.0f, 0.2f)
+			.SetColor(0.4f, 0.0f, 0.4f)
+			.SetIntensity(2.0f);
+		lights.push_back(l0);
 
-		directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
-		vector = XMVectorSet(4.0f, 0.0f, 2.0f, 0.0f);
-		XMStoreFloat3(&directionalLight2.Direction, XMVector3Normalize(vector));
-		directionalLight2.Color = XMFLOAT3(1.0f, 0.7f, 0.0f);
-		directionalLight2.Intensity = 2.0f;
-		lights.push_back(directionalLight2);
+		LightObject l1 = LightObject(l0)
+			.SetDirection(4.0f, 0.0f, 2.0f)
+			.SetColor(1.0f, 0.7f, 0.0f);
+		lights.push_back(l1);
 
-		directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
-		vector = XMVectorSet(-3.0f, 0.5f, 6.0f, 0.0f);
-		XMStoreFloat3(&directionalLight3.Direction, XMVector3Normalize(vector));
-		directionalLight3.Color = XMFLOAT3(0.2f, 0.85f, 0.3f);
-		directionalLight3.Intensity = 2.0f;
-		lights.push_back(directionalLight3);
+		LightObject l2 = LightObject(l0)
+			.SetDirection(-3.0f, 0.5f, 6.0f)
+			.SetColor(0.2f, 0.85f, 0.3f);
+		lights.push_back(l2);
 
-		pointLight1.Type = LIGHT_TYPE_POINT;
-		pointLight1.Position = XMFLOAT3(0.0f, 2.0f, 8.0f);
-		pointLight1.Color = XMFLOAT3(0.1f, 0.1f, 1.0f);
-		pointLight1.Intensity = 4.0f;
-		pointLight1.Range = 5.0f;
-		lights.push_back(pointLight1);
+		LightObject l3 = LightObject(LIGHT_TYPE_POINT)
+			.SetPosition(0.0f, 2.0f, 8.0f)
+			.SetColor(0.1f, 0.1f, 1.0f)
+			.SetIntensity(4.0f)
+			.SetRange(5.0f);
+		lights.push_back(l3);
 
-		spotLight1.Type = LIGHT_TYPE_SPOT;
-		vector = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-		XMStoreFloat3(&spotLight1.Direction, XMVector3Normalize(vector));
-		spotLight1.Position = XMFLOAT3(10.0f, 2.0f, 3.0f);
-		spotLight1.Color = XMFLOAT3(1.0f, 1.0f, 1.0f);
-		spotLight1.Intensity = 10.0f;
-		spotLight1.Range = 20.0f;
-		spotLight1.SpotInnerAngle = XMConvertToRadians(15.0f);
-		spotLight1.SpotOuterAngle = XMConvertToRadians(25.0f);
-		lights.push_back(spotLight1);
+		LightObject l4 = LightObject(LIGHT_TYPE_SPOT)
+			.SetDirection(0.0f, 0.0f, 1.0f)
+			.SetPosition(10.0f, 2.0f, 3.0f)
+			.SetColor(1.0f, 1.0f, 1.0f)
+			.SetIntensity(10.0f)
+			.SetRange(20.0f)
+			.SetSpotAnglesDegrees(15.0f, 25.0f);
+		lights.push_back(l4);
 
 		int numberLights = (int)lights.size();
-		if (numberLights > 5)
-			numberLights = 5;
+		if (numberLights > 5) numberLights = 5;
 
 		memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
 	}
@@ -398,7 +389,6 @@ void Game::LoadShaders()
 	sampDesc.MaxAnisotropy = 16;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	Graphics::Device->CreateSamplerState(&sampDesc, samplerState.GetAddressOf());
-
 	
 
 	// Normals and tangents for materials
@@ -445,14 +435,6 @@ void Game::CreateGeometry()
 	MakeMesh("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
 
 	std::wstring skyPaths[6] = MakeSkyPaths(L"Textures/Skies/Planet/");
-	//{
-	//	FixPath(L"Textures/Skies/Clouds Blue/right.png"),
-	//	FixPath(L"Textures/Skies/Clouds Blue/left.png"),
-	//	FixPath(L"Textures/Skies/Clouds Blue/up.png"),
-	//	FixPath(L"Textures/Skies/Clouds Blue/down.png"),
-	//	FixPath(L"Textures/Skies/Clouds Blue/front.png"),
-	//	FixPath(L"Textures/Skies/Clouds Blue/back.png")
-	//};
 
 	ComPtr<ID3DBlob> skyVSBlob;
 	ComPtr<ID3DBlob> skyPSBlob;
@@ -635,8 +617,8 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		vsData.world = currentEntity.GetTransform()->GetWorldMatrix();
 		vsData.worldInvTranspose = currentEntity.GetTransform()->GetWorldInverseTransposeMatrix();
-
 		FillAndBindNextConstantBuffer(&vsData, sizeof(vsData), D3D11_VERTEX_SHADER, 0);
+
 		psData.color = currentEntity.GetMaterial()->GetTint();
 		psData.uvScale = currentEntity.GetMaterial()->GetUVScale();
 		psData.uvOffset = currentEntity.GetMaterial()->GetUVOffset();

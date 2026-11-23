@@ -17,6 +17,8 @@
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
+typedef ComPtr<ID3D11ShaderResourceView> SRVPtr;
+
 class Material
 {
 private:
@@ -24,7 +26,7 @@ private:
 	ComPtr<ID3D11VertexShader> vertexShader;
 	ComPtr<ID3D11PixelShader> pixelShader;
 
-	std::array<ComPtr<ID3D11ShaderResourceView>, 128> textureSRVs{};
+	std::array<SRVPtr, 128> textureSRVs{};
 	std::array<ComPtr<ID3D11SamplerState>, 16> samplers{};
 
 	XMFLOAT2 uvScale = XMFLOAT2(1, 1);
@@ -34,8 +36,10 @@ public:
 	Material(XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
 	Material(ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
 	
-	Material& AddTextureSRVAndSampler(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv, ComPtr<ID3D11SamplerState> sampler);
-	Material& AddTextureSRV(unsigned int slot, ComPtr<ID3D11ShaderResourceView> srv);
+	Material& StorePBRTextures(SRVPtr albedo, SRVPtr normal, SRVPtr roughness, SRVPtr metallic);
+
+	Material& AddTextureSRVAndSampler(unsigned int slot, SRVPtr srv, ComPtr<ID3D11SamplerState> sampler);
+	Material& AddTextureSRV(unsigned int slot, SRVPtr srv);
 	Material& AddSampler(unsigned int slot, ComPtr<ID3D11SamplerState> sampler);
 
 	void BindTexturesAndSamplers();

@@ -97,7 +97,6 @@ float3 cookTorranceF(float3 v, float3 halfAngle, float3 f0)
 float3 lightCalcCookTorrence(
         float3 normal, float3 dirToCamera,
         float3 dirToLight, float roughness,
-        float3 surfaceRGB, float metal,
         float3 halfAngle, float3 f0,
         out float3 F)
 {
@@ -108,7 +107,7 @@ float3 lightCalcCookTorrence(
 
     float3 specularResult = (D * F * G) / 4;
     
-    return specularResult * saturate(dot(normal, l));
+    return specularResult * saturate(dot(normal, dirToLight));
 }
 
 float3 diffuseEnergyConserve(float3 diffuse, float3 f, float metal)
@@ -157,15 +156,15 @@ float4 spotLightTerms(Light l, VertexToPixel input, float3 cameraPosition)
 
 float3 lightCalc(Light l, VertexToPixel input, float3 cameraPosition, float3 surfaceRGB, float roughness, float metal, float3 f0)
 {
-    float3 dirToLight = normalize(l.Position - input.worldPosition);
+    float3 dirToLight = l.Type == LIGHT_TYPE_DIRECTIONAL ? -l.Direction : normalize(l.Position - input.worldPosition);
     float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
     
     float3 halfAngle = normalize(dirToLight + dirToCamera);
     float3 diff = saturate(dot(input.normal, dirToLight));
     
-    float3 Fout = float3(0.0);
+    float3 Fout;
     float3 spec = lightCalcCookTorrence(input.normal, dirToCamera, dirToLight, 
-                                        roughness, surfaceRGB, metal, halfAngle, 
+                                        roughness, halfAngle, 
                                         f0, Fout);
 
     float3 balancedDiff = diffuseEnergyConserve(diff, Fout, metal);
@@ -180,11 +179,11 @@ float3 lightCalc(Light l, VertexToPixel input, float3 cameraPosition, float3 sur
         float cosInner = cos(l.SpotInnerAngle);
         float falloffRange = cosOuter - cosInner;
 
-        factor = saturate((cosOuter - pixelAngle) / falloffRange);
+        factor *= saturate((cosOuter - pixelAngle) / falloffRange);
     }
-    else if (l.Type == LIGHT_TYPE_POINT)
+    if (l.Type == LIGHT_TYPE_POINT || l.Type == LIGHT_TYPE_SPOT)
     {
-        factor = attenuate(l, input.worldPosition);
+        factor *= attenuate(l, input.worldPosition);
     }
     
     return (balancedDiff * surfaceRGB + spec) * l.Intensity * l.Color * factor;
