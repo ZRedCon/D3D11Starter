@@ -28,29 +28,19 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3x3 tanBiNorms = float3x3(tangents, biTangents, normals);
     input.normal = mul(unpackedNormals, tanBiNorms);
     
-    float roughness = RoughnessMap.Sample(BasicSampler, adjustedUV).r;
-    float metalness = MetalnessMap.Sample(BasicSampler, adjustedUV).r;
+    float roughness = 0.5; //RoughnessMap.Sample(BasicSampler, adjustedUV).r;
+    float metalness = 0.5; //MetalnessMap.Sample(BasicSampler, adjustedUV).r;
+    float4 surfaceColor = SampleTexture(SurfaceTexture, BasicSampler, adjustedUV) * AS_4(color.rgb);
+    float3 f0 = lerp(0.04, surfaceColor, metalness) * (1 - metalness);
     
-    float4 surfaceColor = SampleTexture(SurfaceTexture, BasicSampler, adjustedUV);
-    float4 ambientTerm = AS_4(ambiantColor) * surfaceColor * color;
+    float3 ambientTerm = ambiantColor * surfaceColor.rgb;
     
-    float4 sumOfLights = float4(0, 0, 0, 0);
+    float3 sumOfLights = float3(0, 0, 0);
     for (int i = 0; i < 5; i++)
     {
-        switch (light1[i].Type)
-        {
-            case LIGHT_TYPE_DIRECTIONAL:
-                sumOfLights += directionalLightTerms(light1[i], input, cameraPosition);
-                break;
-            case LIGHT_TYPE_POINT:
-                sumOfLights += pointLightTerms(light1[i], input, cameraPosition);
-                break;
-            case LIGHT_TYPE_SPOT:
-                sumOfLights += spotLightTerms(light1[i], input, cameraPosition);
-                break;
-        }
+        sumOfLights += lightCalc(light1[i], input, cameraPosition, surfaceColor.rgb, roughness, metalness, f0);
+
     }
     
-    
-    return gammaCorrect(ambientTerm + surfaceColor * sumOfLights);
+    return gammaCorrect(AS_4(ambientTerm + sumOfLights));
 }

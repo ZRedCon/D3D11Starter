@@ -88,23 +88,23 @@ float cookTorranceG(float3 normal, float3 v, float roughness)
     return 1 / (NdotV * (1 - k) + k);
 }
 
-float3 cookTorranceF(float3 v, float3 halfAngle, float f0)
+float3 cookTorranceF(float3 v, float3 halfAngle, float3 f0)
 {
     float VdotH = saturate(dot(v, halfAngle));
     return f0 + (1 - f0) * pow(1 - VdotH, 5);
 }
 
-float4 lightCalcCookTorrence(
-        float3 normal, float3 v,
-        float3 l, float roughness,
+float3 lightCalcCookTorrence(
+        float3 normal, float3 dirToCamera,
+        float3 dirToLight, float roughness,
         float3 surfaceRGB, float metal,
-        float3 halfAngle)
+        float3 halfAngle, float3 f0,
+        out float3 F)
 {
-    float f0 = lerp(0.04, surfaceRGB, metal);
     
     float  D = cookTorranceD(normal, halfAngle, roughness);
-    float3 F = cookTorranceF(v, halfAngle, f0);
-    float  G = cookTorranceG(normal, v, roughness) * cookTorranceG(normal, l, roughness);
+    float G = cookTorranceG(normal, dirToCamera, roughness) * cookTorranceG(normal, dirToLight, roughness);
+    F = cookTorranceF(dirToCamera, halfAngle, f0);
 
     float3 specularResult = (D * F * G) / 4;
     
@@ -113,7 +113,7 @@ float4 lightCalcCookTorrence(
 
 float3 diffuseEnergyConserve(float3 diffuse, float3 f, float metal)
 {
-    return diffuse * (1 - F) * (1 - metal);
+    return diffuse * (1 - f) * (1 - metal);
 }
 
 
@@ -153,6 +153,41 @@ float4 spotLightTerms(Light l, VertexToPixel input, float3 cameraPosition)
     float spotTerm = saturate((cosOuter - pixelAngle) / falloffRange);
 
     return pointLightTerms(l, input, cameraPosition) * spotTerm;
+}
+
+float3 lightCalc(Light l, VertexToPixel input, float3 cameraPosition, float3 surfaceRGB, float roughness, float metal, float3 f0)
+{
+    float3 dirToLight = normalize(l.Position - input.worldPosition);
+    float3 dirToCamera = normalize(cameraPosition - input.worldPosition);
+    
+    float3 halfAngle = normalize(dirToLight + dirToCamera);
+    float3 diff = saturate(dot(input.normal, dirToLight));
+    
+    float3 Fout = float3(0.0);
+    float3 spec = lightCalcCookTorrence(input.normal, dirToCamera, dirToLight, 
+                                        roughness, surfaceRGB, metal, halfAngle, 
+                                        f0, Fout);
+
+    float3 balancedDiff = diffuseEnergyConserve(diff, Fout, metal);
+    
+    float factor = 1.0;
+    if (l.Type == LIGHT_TYPE_SPOT)
+    {
+        float3 lightToPixel = normalize(input.worldPosition - l.Position);
+        float pixelAngle = saturate(dot(lightToPixel, l.Direction));
+
+        float cosOuter = cos(l.SpotOuterAngle);
+        float cosInner = cos(l.SpotInnerAngle);
+        float falloffRange = cosOuter - cosInner;
+
+        factor = saturate((cosOuter - pixelAngle) / falloffRange);
+    }
+    else if (l.Type == LIGHT_TYPE_POINT)
+    {
+        factor = attenuate(l, input.worldPosition);
+    }
+    
+    return (balancedDiff * surfaceRGB + spec) * l.Intensity * l.Color * factor;
 }
 
 inline float4 gammaCorrect(float4 color)
