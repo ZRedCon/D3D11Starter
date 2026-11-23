@@ -22,8 +22,3 @@ void Texture2D::Inspector()
 	ImGui::Image((void*)(srv.Get()), ImVec2(40.0f, 40.0f));
 	ImGui::Unindent();
 }
-
-void Texture2D::InspectStatics()
-{
-
-}

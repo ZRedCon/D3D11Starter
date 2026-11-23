@@ -5,7 +5,7 @@ GameEntity::GameEntity(std::string _name, std::shared_ptr<Mesh> startMesh, std::
 	name = _name;
 	mesh = startMesh;
 	material = startMaterial;
-	transform = std::make_shared<Transform>();
+	transform = std::make_shared<Transform>(_name);
 }
 
 std::shared_ptr<Transform> GameEntity::GetTransform() { return transform; }
@@ -18,10 +18,12 @@ void GameEntity::Inspector()
 {
 	if (ImGui::CollapsingHeader(("Entity " + name + ":").c_str()))
 	{
+		ImGui::PushID(this);
 		ImGui::Indent();
 		transform->Inspector();
 		mesh->Inspector();
 		material->Inspector();
 		ImGui::Unindent();
+		ImGui::PopID();
 	}
 }

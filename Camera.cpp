@@ -8,7 +8,7 @@ void Camera::UpdateAllCamerasProjMatrix()
 
 }
 
-std::shared_ptr<Camera> Camera::GetCurrentCamera() { return Get(currCam); 
+std::shared_ptr<Camera> Camera::GetCurrentCamera() { return Get(currCam); }
 
 Camera::Camera(std::string _name, float aspectRatio, XMFLOAT3 initialPosition)
 {
@@ -16,7 +16,7 @@ Camera::Camera(std::string _name, float aspectRatio, XMFLOAT3 initialPosition)
 	if (currCam == "")
 		currCam = _name;
 
-	transform = std::make_unique<Transform>();
+	transform = std::make_unique<Transform>(_name);
 	transform->SetPosition( initialPosition );
 	aspRatio = aspectRatio;
 	fov = XM_PIDIV2;
@@ -158,5 +158,5 @@ void Camera::Inspector()
 
 void Camera::InspectStatics()
 {
-	ImGui::Text(std::string("Active Camera: " + currCam).c_str());
+	ImGui::Text("Active Camera: %s", currCam.c_str());
 }

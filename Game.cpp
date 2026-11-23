@@ -39,10 +39,7 @@
 // Shoud ImGui display, will also display if DEBUG is defined
 #define ENABLE_IMGUI
 
-// Wrapper that blocks out a ImGui window creation
-// Avoid using commas please I swear to god I don't want to have to fix that :sob:
 #define ImGui_Window(windowName, block) ImGui::Begin(windowName); { block } ImGui::End();
-
 #define MakeSkyPaths(path) { FixPath(ASSETS_PATH + path + L"right.png"), FixPath(ASSETS_PATH + path + L"left.png"), FixPath(ASSETS_PATH + path + L"up.png"), FixPath(ASSETS_PATH + path + L"down.png"), FixPath(ASSETS_PATH + path + L"front.png"), FixPath(ASSETS_PATH + path + L"back.png") }
 #define RoundToMultiple(dataSize, intervalSize) (((dataSize) + (intervalSize) - 1) / (intervalSize) * (intervalSize))
 #define GetAssetPath(subpath) FixPath(ASSETS_PATH + subpath).c_str()
@@ -67,7 +64,6 @@ PixelColorBuffer psData;
 
 // -- Temp vars for current assignment(s) --
 std::vector<GameEntity> entities;
-
 ComPtr<ID3D11SamplerState> samplerState;
 
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
@@ -267,14 +263,6 @@ static ComPtr<ID3D11PixelShader> LoadPixelShader(const wchar_t* path, ComPtr<ID3
 	return pixelShader;
 }
 
-// --------------------------------------------------------
-// Loads shaders from compiled shader object (.cso) files
-// and also created the Input Layout that describes our 
-// vertex data to the rendering pipeline. 
-// - Input Layout creation is done here because it must 
-//    be verified against vertex shader byte code
-// - We'll have that byte code already loaded below
-// --------------------------------------------------------
 void Game::LoadShaders()
 {
 	ComPtr<ID3DBlob> vertexShaderBlob;
@@ -361,18 +349,15 @@ void Game::LoadShaders()
 	}
 }
 
-// --------------------------------------------------------
-// Creates the geometry we're going to draw
-// --------------------------------------------------------
 void Game::CreateGeometry()
 {
-	Mesh::Create("cube", "../../Assets/Meshes/cube.bobj");
-	Mesh::Create("cylinder", "../../Assets/Meshes/cylinder.bobj");
-	Mesh::Create("helix", "../../Assets/Meshes/helix.bobj");
-	Mesh::Create("sphere", "../../Assets/Meshes/sphere.bobj");
-	Mesh::Create("torus", "../../Assets/Meshes/torus.bobj");
-	Mesh::Create("quad", "../../Assets/Meshes/quad.bobj");
-	Mesh::Create("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
+	Mesh::Create("cube", GetAssetPath(L"Meshes/cube.bobj"));
+	Mesh::Create("cylinder", GetAssetPath(L"Meshes/cylinder.bobj"));
+	Mesh::Create("helix", GetAssetPath(L"Meshes/helix.bobj"));
+	Mesh::Create("sphere", GetAssetPath(L"Meshes/sphere.bobj"));
+	Mesh::Create("torus", GetAssetPath(L"Meshes/torus.bobj"));
+	Mesh::Create("quad", GetAssetPath(L"Meshes/quad.bobj"));
+	Mesh::Create("quad_double_sided", GetAssetPath(L"Meshes/quad_double_sided.bobj"));
 
 	ComPtr<ID3DBlob> skyVSBlob;
 	ComPtr<ID3DBlob> skyPSBlob;

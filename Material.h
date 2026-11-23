@@ -61,6 +61,5 @@ public:
 	Material& SetShaders(ComPtr<ID3D11PixelShader> newPixelShader, ComPtr<ID3D11VertexShader> newVertexShader);
 
 	void Inspector() override;
-	void InspectStatics() override;
 };
 

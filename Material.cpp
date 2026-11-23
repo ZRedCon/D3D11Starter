@@ -2,6 +2,7 @@
 
 Material::Material(std::string name, XMFLOAT4 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader)
 {
+	this->name = name;
 	tint = startTint;
 	vertexShader = startVertexShader;
 	pixelShader = startPixelShader;
@@ -127,9 +128,4 @@ void Material::Inspector()
 
 		ImGui::Unindent();
 	}
-}
-
-void Material::InspectStatics()
-{
-
 }

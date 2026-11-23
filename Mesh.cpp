@@ -425,8 +425,3 @@ void Mesh::Inspector()
 		ImGui::Unindent();
 	}
 }
-
-void Mesh::InspectStatics()
-{
-	// Display the names of all meshes
-}

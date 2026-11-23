@@ -1,8 +1,8 @@
 #pragma once
 #include <DirectXMath.h>
-#include "BufferStructs.h"
-
 #include "Inspectable.h"
+
+struct PixelColorBuffer;
 
 #define NUM_LIGHTS 5
 
@@ -31,10 +31,10 @@ private:
 public:
 	static void PlaceLightsInPS(PixelColorBuffer& psData);
 
-	LightObject(int type);
+	LightObject(std::string _name, int type);
 
-	LightObject(const LightObject& other);
-	LightObject(const Light& other);
+	LightObject(std::string _name, const LightObject& other);
+	LightObject(std::string _name, const Light& other);
 
 	LightObject& operator=(const LightObject& right);
 	LightObject& operator=(const Light& right);
@@ -62,6 +62,6 @@ public:
 	operator Light() const;
 
 	void Inspector() override;
-	void InspectStatics() override;
+	static void InspectStatics();
 };
 

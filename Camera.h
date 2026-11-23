@@ -47,5 +47,5 @@ public:
 	void Update(float dt);
 
 	void Inspector() override;
-	void InspectStatics() override;
+	static void InspectStatics();
 };

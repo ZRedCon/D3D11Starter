@@ -42,7 +42,7 @@ public:
 	/// </summary>
 	template <std::size_t N>
 	Mesh(std::string _name, std::array<Vertex, N> vertices)			// Note for future Zach, as it turns out Lambdas are turing complete
-		: Mesh(vertices, []() {						// 1. Evil Lambda
+		: Mesh(_name, vertices, []() {						// 1. Evil Lambda
 			std::array<unsigned int, N> indicies;	// 2. Create second array now
 			for (int i = 0; i < N; i++)				// 3. increment since for some reason c++ with all it's bloat has 
 			{										//    no iterate() function
@@ -56,7 +56,7 @@ public:
 	/// </summary>
 	template <std::size_t N, std::size_t M>
 	Mesh(std::string _name, std::array<Vertex, N> vertices, std::array<unsigned int, M> indicies)	// 1. Wrapper
-		: Mesh(vertices.data(), int(N), indicies.data(), int(M)) { }								// 2. Candy
+		: Mesh(_name, vertices.data(), int(N), indicies.data(), int(M)) { }								// 2. Candy
 
 	/// <summary>
 	/// Default constructor
@@ -75,5 +75,4 @@ public:
 	void Draw();
 
 	void Inspector() override;
-	void InspectStatics() override;
 };

@@ -27,22 +27,20 @@ private:
 	static inline std::unordered_map<std::string, std::shared_ptr<T>> instances;
 
 public:
-	// Initializer
 	template <typename... Args>
 	static std::shared_ptr<T> Create(const std::string& key, Args&&... args)
 	{
-		auto instance = std::make_shared<T>(std::forward<Args>(args)...);
+		auto instance = std::make_shared<T>(key, std::forward<Args>(args)...);
 		instances[key] = instance;
 		return instance;
 	}
 
-	// Fetcher
 	static std::shared_ptr<T> Get(const std::string& key)
 	{
 		auto it = instances.find(key);
 		if (it != instances.end()) return it->second;
 
-		if constexpr (std::is_constructible_v<T, const std::string&>) return Create(key, key);
+		if constexpr (std::is_constructible_v<T, const std::string&>) return Create(key);
 		else return nullptr;
 	}
 
@@ -50,25 +48,20 @@ public:
 	{
 		std::vector<std::shared_ptr<T>> values;
 		values.reserve(instances.size());
-		int i = 0;
 		for (const auto& [key, value] : instances)
-			values[i++] = value;
+			values.push_back(value);
 		return values;
 	}
-	static unsigned int Count()
-	{
-		return instances.size();
-	}
 
-	// Fast inspector calling
+	static size_t Count() { return instances.size(); }
+
 	static void InspectAll()
 	{
-		InspectStatics();
+		T::InspectStatics();
 		for (auto& [key, instance] : instances)
 			instance->Inspector();
 	}
 
-	static void Clear() { instances.clear(); }
-
-	virtual void InspectStatics() = 0;
+	// Does nothing by default; a class can hide it with its own static InspectStatics()
+	static void InspectStatics() {}
 };

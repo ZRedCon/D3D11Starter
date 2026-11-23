@@ -1,29 +1,31 @@
 #include "Lights.h"
+#include "BufferStructs.h"
 
 void LightObject::PlaceLightsInPS(PixelColorBuffer& psData)
 {
-	int numberLights = Count();
-	if (numberLights > 5) 
+	int i = 0;
+	for (auto& lightObject : GetInstances())
 	{
-		numberLights = 5;
-		printf("Error: Too many lights");
+		if (i == NUM_LIGHTS) { printf("Error: Too many lights\n"); break; }
+		psData.light[i++] = *lightObject;   // uses operator Light()
 	}
-
-	memcpy(psData.light, &GetInstances(), sizeof(Light) * numberLights);
 }
 
-LightObject::LightObject(int type)
+LightObject::LightObject(std::string _name, int type)
 {
+	name = _name;
 	light.Type = type;
 }
 
-LightObject::LightObject(const LightObject& other)
+LightObject::LightObject(std::string _name, const LightObject& other)
 {
+	name = _name;
 	light = other.light;
 }
 
-LightObject::LightObject(const Light& other)
+LightObject::LightObject(std::string _name, const Light& other)
 {
+	name = _name;
 	light = other;
 }
 

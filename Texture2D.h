@@ -19,7 +19,7 @@
 
 typedef Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRVPtr;
 
-class Texture2D : Registered<Texture2D>
+class Texture2D : public Registered<Texture2D>
 {
 private:
 	static inline std::wstring ASSETS_TEXTURE_PATH = L"../../Assets/Textures/";
@@ -34,6 +34,5 @@ public:
 	static SRVPtr GetSRV(std::string key);
 
 	void Inspector() override;
-	void InspectStatics() override;
 };
 
