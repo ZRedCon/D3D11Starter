@@ -26,5 +26,7 @@ private:
 public:
 	Texture2D(std::wstring pathName);
 	SRVPtr GetSRV();
+
+	operator SRVPtr() const;
 };
 

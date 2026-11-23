@@ -8,7 +8,5 @@ Texture2D::Texture2D(std::wstring pathName)
 		GetAssetPath(L"Textures/Textures with Normal Maps/cobblestone.png"), 0, srv.GetAddressOf());
 }
 
-SRVPtr Texture2D::GetSRV()
-{
-	return srv;
-}
+SRVPtr Texture2D::GetSRV() { return srv; }
+Texture2D::operator SRVPtr() const { return srv; }

@@ -47,6 +47,8 @@
 
 #define MakeMesh(name, path) meshes[name] = std::make_shared<Mesh>(FixPath( path ).c_str());
 #define MakeSkyPaths(path) { FixPath(ASSETS_PATH + path + L"right.png"), FixPath(ASSETS_PATH + path + L"left.png"), FixPath(ASSETS_PATH + path + L"up.png"), FixPath(ASSETS_PATH + path + L"down.png"), FixPath(ASSETS_PATH + path + L"front.png"), FixPath(ASSETS_PATH + path + L"back.png") }
+#define RoundToMultiple(dataSize, intervalSize) ((dataSize + intervalSize - 1) / intervalSize * intervalSize)
+
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -104,11 +106,6 @@ static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
 // --------------------------------------------------------
 Game::Game()
 {
-	// Setup cornflower blue bg color
-	//backgroundColor->at(0) = 0.4f;
-	//backgroundColor->at(1) = 0.6f;
-	//backgroundColor->at(2) = 0.75f;
-	//backgroundColor->at(3) = 0.0f;
 	backgroundColor->at(0) = 0.01f;
 	backgroundColor->at(1) = 0.02f;
 	backgroundColor->at(2) = 0.03f;
@@ -117,7 +114,6 @@ Game::Game()
 	psData.ambiantColor = XMFLOAT3(0.15f, 0.15f, 0.3f);
 
 	LoadShaders();
-
 	CreateGeometry();
 
 	Graphics::Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -180,7 +176,7 @@ Game::Game()
 	
 	// Make the cameras
 	{
-		cameras.push_back( std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(0,0,-1)) );
+		cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(0,0,-1)));
 		cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(1, 1, -4)));
 		cameras[ 1 ]->SetFOV( 0.7f );
 		currCam = 0;
@@ -234,10 +230,6 @@ Game::~Game()
 	ImGui::DestroyContext();
 }
 
-static int RoundToMultiple(const int dataSize, const int intervalSize)
-{
-	return (dataSize + intervalSize - 1) / intervalSize * intervalSize;
-}
 
 static void FillAndBindNextConstantBuffer(const void* dataAddr, const int dataSize, D3D11_SHADER_TYPE shaderType, unsigned int registerSlot)
 {
@@ -392,16 +384,9 @@ void Game::LoadShaders()
 	
 
 	// Normals and tangents for materials
-	ComPtr<ID3D11ShaderResourceView> cobblestone;
-	ComPtr<ID3D11ShaderResourceView> cobblestoneNormals;
-	ComPtr<ID3D11ShaderResourceView> flatNormals;
-
-	CreateWICTextureFromFile(DeviceAndContextGet,
-		GetAssetPath(L"Textures/Textures with Normal Maps/cobblestone.png"), 0, cobblestone.GetAddressOf());
-	CreateWICTextureFromFile(DeviceAndContextGet,
-		GetAssetPath(L"Textures/Textures with Normal Maps/cobblestone_normals.png"), 0, cobblestoneNormals.GetAddressOf());
-	CreateWICTextureFromFile(DeviceAndContextGet,
-		GetAssetPath(L"Textures/Textures with Normal Maps/flat_normals.png"), 0, flatNormals.GetAddressOf());
+	SRVPtr cobblestone = Texture2D(L"Textures with Normal Maps/cobblestone.png");
+	SRVPtr cobblestoneNormals = Texture2D(L"Textures with Normal Maps/cobblestone_normals.png");
+	SRVPtr flatNormals = Texture2D(L"Textures with Normal Maps/flat_normals.png");
 	
 	materials["white material"]->
 		AddTextureSRVAndSampler(0, gracias, samplerState)
