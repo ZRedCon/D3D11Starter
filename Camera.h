@@ -1,7 +1,11 @@
 #pragma once
+#include <iostream>
 #include <memory>
 #include "Input.h"
 #include "Transform.h"
+#include "Window.h"
+
+#include "Inspectable.h"
 
 enum class CameraProjectionMode
 {
@@ -9,9 +13,10 @@ enum class CameraProjectionMode
 	Orthographic
 };
 
-class Camera
+class Camera : public Registered<Camera>
 {
 private:
+	static inline std::string currCam = "";
 	std::unique_ptr<Transform> transform;
 	XMFLOAT4X4 viewMatrix;
 	XMFLOAT4X4 projectionMatrix;
@@ -21,7 +26,11 @@ private:
 	float farClip;
 	CameraProjectionMode projection = CameraProjectionMode::Perspective;
 public:
-	Camera(float aspectRatio, XMFLOAT3 initialPosition);
+	static void UpdateAllCamerasProjMatrix();
+	static std::shared_ptr<Camera> GetCurrentCamera();
+
+	Camera(std::string _name, float aspectRatio, XMFLOAT3 initialPosition);
+
 
 	Transform& GetTransform();
 	float GetFov();
@@ -36,4 +45,7 @@ public:
 	void UpdateViewMatrix();
 	void UpdateProjectionMatrix(float aspectRatio);
 	void Update(float dt);
+
+	void Inspector() override;
+	void InspectStatics() override;
 };

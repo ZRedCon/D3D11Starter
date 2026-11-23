@@ -43,7 +43,6 @@
 // Avoid using commas please I swear to god I don't want to have to fix that :sob:
 #define ImGui_Window(windowName, block) ImGui::Begin(windowName); { block } ImGui::End();
 
-#define MakeMesh(name, path) meshes[name] = std::make_shared<Mesh>(FixPath( path ).c_str());
 #define MakeSkyPaths(path) { FixPath(ASSETS_PATH + path + L"right.png"), FixPath(ASSETS_PATH + path + L"left.png"), FixPath(ASSETS_PATH + path + L"up.png"), FixPath(ASSETS_PATH + path + L"down.png"), FixPath(ASSETS_PATH + path + L"front.png"), FixPath(ASSETS_PATH + path + L"back.png") }
 #define RoundToMultiple(dataSize, intervalSize) (((dataSize) + (intervalSize) - 1) / (intervalSize) * (intervalSize))
 #define GetAssetPath(subpath) FixPath(ASSETS_PATH + subpath).c_str()
@@ -57,8 +56,6 @@ static std::wstring ASSETS_PATH = L"../../Assets/";
 
 bool displayDemoPanel = true;
 std::unique_ptr<std::array<float, 4>> backgroundColor = std::make_unique<std::array<float, 4>>();
-char textValue[2048] = "Hello Cruel World!";
-int number = 0;
 
 // Constant Buffer
 BufPtr constantBuffer;
@@ -69,19 +66,13 @@ VertexShaderData vsData;
 PixelColorBuffer psData;
 
 // -- Temp vars for current assignment(s) --
-std::unordered_map<std::string, std::shared_ptr<Mesh>> meshes;
 std::vector<GameEntity> entities;
-
-std::vector<std::shared_ptr<Camera>> cameras;
-int currCam = -1;
 
 ComPtr<ID3D11SamplerState> samplerState;
 
-std::vector<Light> lights;
-
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
 {
-	entities.push_back(GameEntity(meshes[ nameOfMesh ], Material::MaterialAt(nameOfMaterial)));
+	entities.push_back(GameEntity(nameOfMesh + " : " + nameOfMaterial, Mesh::Get(nameOfMesh) , Material::Get(nameOfMaterial)));
 	return entities.back();
 }
 
@@ -154,60 +145,48 @@ Game::Game()
 		for (int y = 0; y < NUM_Y; y++)
 		{
 			std::string mat = matOrder[y];
-			int x = 0;
-			for (const auto& keys : meshes)
-			{
+			for (int x = 0; x < NUM_Y; x++)
 				AddEntity(meshesOrder[x], mat).GetTransform()->MoveAbsolute(float(x * GRID_SIZE), float(NUM_Y - y - HALF_NUM) * GRID_SIZE, 10.0f);
-				x++;
-			}
 		}
 	}
 	
 	// Make the cameras
 	{
-		cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(0,0,-1)));
-		cameras.push_back(std::make_shared<Camera>(Window::AspectRatio(), XMFLOAT3(1, 1, -4)));
-		cameras[ 1 ]->SetFOV( 0.7f );
-		currCam = 0;
+		Camera::Create("1", Window::AspectRatio(), XMFLOAT3(0, 0, -1));
+		Camera::Create("2", Window::AspectRatio(), XMFLOAT3(1, 1, -4))->
+			SetFOV( 0.7f );
 	}
 
 	// Make the light(s)
 	{
-		LightObject l0 = LightObject(LIGHT_TYPE_DIRECTIONAL)
-			.SetDirection(1.0f, -2.0f, 0.2f)
+		LightObject l0 = LightObject::Create("directional #1", LIGHT_TYPE_DIRECTIONAL)->
+			SetDirection(1.0f, -2.0f, 0.2f)
 			.SetColor(0.4f, 0.0f, 0.4f)
 			.SetIntensity(2.0f);
-		lights.push_back(l0);
 
-		LightObject l1 = LightObject(l0)
-			.SetDirection(4.0f, 0.0f, 2.0f)
+		LightObject::Create("directional #2", l0)->
+			SetDirection(4.0f, 0.0f, 2.0f)
 			.SetColor(1.0f, 0.7f, 0.0f);
-		lights.push_back(l1);
 
-		LightObject l2 = LightObject(l0)
-			.SetDirection(-3.0f, 0.5f, 6.0f)
+		LightObject::Create("directional #3", l0)->
+			SetDirection(-3.0f, 0.5f, 6.0f)
 			.SetColor(0.2f, 0.85f, 0.3f);
-		lights.push_back(l2);
 
-		LightObject l3 = LightObject(LIGHT_TYPE_POINT)
-			.SetPosition(0.0f, 2.0f, 8.0f)
+		LightObject::Create("point #1", LIGHT_TYPE_POINT)->
+			SetPosition(0.0f, 2.0f, 8.0f)
 			.SetColor(0.1f, 0.1f, 1.0f)
 			.SetIntensity(4.0f)
 			.SetRange(5.0f);
-		lights.push_back(l3);
 
-		LightObject l4 = LightObject(LIGHT_TYPE_SPOT)
-			.SetDirection(0.0f, 0.0f, 1.0f)
+		LightObject::Create("spot #1", LIGHT_TYPE_SPOT)->
+			SetDirection(0.0f, 0.0f, 1.0f)
 			.SetPosition(10.0f, 2.0f, 3.0f)
 			.SetColor(1.0f, 1.0f, 1.0f)
 			.SetIntensity(10.0f)
 			.SetRange(20.0f)
 			.SetSpotAnglesDegrees(15.0f, 25.0f);
-		lights.push_back(l4);
 
-		int numberLights = (int)lights.size();
-		if (numberLights > 5) numberLights = 5;
-		memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
+		LightObject::PlaceLightsInPS(psData);
 	}
 }
 
@@ -345,37 +324,37 @@ void Game::LoadShaders()
 	
 	// Materials
 	{
-		Material::MaterialAt("cobblestone")->
+		Material::Get("cobblestone")->
 			SetShaders(pixelShader, vertexShader)
 			.AddSampler(0, samplerState)
 			.StorePBRTextures(L"PBR/cobblestone", L".png");
 
-		Material::MaterialAt("bronze")->
+		Material::Get("bronze")->
 			SetShaders(pixelShader, vertexShader)
 			.AddSampler(0, samplerState)
 			.StorePBRTextures(L"PBR/bronze", L".png");
 		
-		Material::MaterialAt("floor")->
+		Material::Get("floor")->
 			SetShaders(pixelShader, vertexShader)
 			.AddSampler(0, samplerState)
 			.StorePBRTextures(L"PBR/floor", L".png");
 
-		Material::MaterialAt("paint")->
+		Material::Get("paint")->
 			SetShaders(pixelShader, vertexShader)
 			.AddSampler(0, samplerState)
 			.StorePBRTextures(L"PBR/paint", L".png");
 
-		Material::MaterialAt("rough")->
+		Material::Get("rough")->
 			SetShaders(pixelShader, vertexShader)
 			.AddSampler(0, samplerState)
 			.StorePBRTextures(L"PBR/rough", L".png");
 
-		Material::MaterialAt("scratched")->
+		Material::Get("scratched")->
 			SetShaders(pixelShader, vertexShader)
 			.AddSampler(0, samplerState)
 			.StorePBRTextures(L"PBR/scratched", L".png");
 
-		Material::MaterialAt("wood")->
+		Material::Get("wood")->
 			SetShaders(pixelShader, vertexShader)
 			.AddSampler(0, samplerState)
 			.StorePBRTextures(L"PBR/wood", L".png");
@@ -387,17 +366,17 @@ void Game::LoadShaders()
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
-	MakeMesh("cube", "../../Assets/Meshes/cube.bobj");
-	MakeMesh("cylinder", "../../Assets/Meshes/cylinder.bobj");
-	MakeMesh("helix", "../../Assets/Meshes/helix.bobj");
-	MakeMesh("sphere", "../../Assets/Meshes/sphere.bobj");
-	MakeMesh("torus", "../../Assets/Meshes/torus.bobj");
-	MakeMesh("quad", "../../Assets/Meshes/quad.bobj");
-	MakeMesh("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
+	Mesh::Create("cube", "../../Assets/Meshes/cube.bobj");
+	Mesh::Create("cylinder", "../../Assets/Meshes/cylinder.bobj");
+	Mesh::Create("helix", "../../Assets/Meshes/helix.bobj");
+	Mesh::Create("sphere", "../../Assets/Meshes/sphere.bobj");
+	Mesh::Create("torus", "../../Assets/Meshes/torus.bobj");
+	Mesh::Create("quad", "../../Assets/Meshes/quad.bobj");
+	Mesh::Create("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
 
 	ComPtr<ID3DBlob> skyVSBlob;
 	ComPtr<ID3DBlob> skyPSBlob;
-	Sky::MakeSky(meshes["cube"], samplerState,
+	Sky::MakeSky(Mesh::Get("cube"), samplerState,
 		LoadVertexShader(L"SkyVertexShader.cso", skyVSBlob),
 		LoadPixelShader(L"SkyPixelShader.cso", skyPSBlob),
 		MakeSkyPaths(L"Textures/Skies/Planet/"));
@@ -405,9 +384,7 @@ void Game::CreateGeometry()
 
 void Game::OnResize()
 {
-	if (currCam > -1)
-		for (auto cam : cameras)
-			cam->UpdateProjectionMatrix(Window::AspectRatio());
+	Camera::UpdateAllCamerasProjMatrix();
 }
 
 static void ImGuiUpdate(float deltaTime)
@@ -432,66 +409,18 @@ static void ImGuiUpdate(float deltaTime)
 		ImGui::ShowDemoWindow();
 }
 
-static void CameraInspector(Camera& camera, std::string name, int index)
-{
-	if (ImGui::CollapsingHeader((name + " Transform").c_str()))
-	{
-		Transform& currTransform = camera.GetTransform();
-
-		XMFLOAT3 newPos = currTransform.GetPosition();
-		ImGui::DragFloat3((name + std::string(" Position")).c_str(), &newPos.x, 0.01f, -1.0f, 1.0f);
-		currTransform.SetPosition(newPos);
-
-		XMFLOAT3 newRot = currTransform.GetPitchYawRoll();
-		ImGui::DragFloat3((name + std::string(" Rotation")).c_str(), &newRot.x, 0.01f, -1.0f, 1.0f);
-		currTransform.SetRotation(newRot);
-	}
-	
-	float newFov = camera.GetFov();
-	ImGui::DragFloat((name + " Fov").c_str(), &newFov, 0.01f, 0.1f, XM_2PI);
-	camera.SetFOV( newFov );
-
-	XMFLOAT2 newPlanes = camera.GetClipPlanes();
-	ImGui::DragFloat2((name + " Clipping planes (near|far)").c_str(), &newPlanes.x, 0.001f, 0.01f, 10000.0f);
-	if (newPlanes.x >= newPlanes.y)
-		newPlanes.y = newPlanes.x + 0.001f;
-	camera.SetClipPlanes( newPlanes );
-
-	if (ImGui::Button((name + " Set as Main Camera").c_str()))
-	{
-		currCam = index;
-	}
-}
-
-static std::string GetLightType(Light l)
-{
-	switch (l.Type)
-	{
-	case LIGHT_TYPE_DIRECTIONAL: return "DIRECTIONAL";
-	case LIGHT_TYPE_POINT: return "POINT";
-	case LIGHT_TYPE_SPOT: return "SPOT";
-	default: return "Invalid Type, something has gone horribly, horribly wrong!";
-	}
-}
-
 static void BuildUI(float deltaTime)
 {
 	ImGui::Begin("Inspector"); {
 		if (ImGui::CollapsingHeader("GameEntities")) {
 			ImGui::Indent();
-			for (int i = 0; i < entities.size(); i++) {
-				std::string entityName = std::to_string(i);
-				entities[i].Inspector(entityName);
-			}
+			for (int i = 0; i < entities.size(); i++)
+				entities[i].Inspector();
 			ImGui::Unindent();
 		}
 		if (ImGui::CollapsingHeader("Cameras")) {
 			ImGui::Indent();
-			for (int i = 0; i < cameras.size(); i++) {
-				if (ImGui::CollapsingHeader(("Camera " + std::to_string(i) + ":").c_str())) {
-					CameraInspector(*cameras[i], std::to_string(i), i);
-				}
-			}
+			Camera::InspectAll();
 			ImGui::Unindent();
 		}
 		if (ImGui::CollapsingHeader("Lighting")) {
@@ -502,16 +431,7 @@ static void BuildUI(float deltaTime)
 				ImGui::ColorEdit3("Ambiant", &psData.ambiantColor.x);
 				ImGui::Unindent();
 			}
-			for (int i = 0; i < lights.size(); i++) {
-				auto name = "Light #" + std::to_string(i);
-				if (ImGui::CollapsingHeader(name.c_str())) {
-					ImGui::Indent();
-					ImGui::LabelText("", ("Type: " + GetLightType(lights[i])).c_str());
-					ImGui::ColorEdit3((name + "'s Color").c_str(), &lights[i].Color.x);
-					ImGui::DragFloat((name + "'s Intensity").c_str(), &lights[i].Intensity, 0.05f, 0.0f, 200.0f);
-					ImGui::Unindent();
-				}
-			}
+			LightObject::InspectAll();
 			ImGui::Unindent();
 		}
 	} ImGui::End();;
@@ -527,7 +447,7 @@ void Game::Update(float deltaTime, float totalTime)
 	BuildUI( deltaTime );
 #endif
 
-	cameras[ currCam ]->Update( deltaTime );
+	Camera::GetCurrentCamera()->Update(deltaTime);
 
 	psData.elaspedTime = totalTime;
 
@@ -551,13 +471,11 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	vsData.view = cameras[ currCam ]->GetViewMatrix();
-	vsData.projection = cameras[ currCam ]->GetProjectionMatrix();
-	psData.cameraPosition = cameras[ currCam ]->GetTransform().GetPosition();
+	vsData.view = Camera::GetCurrentCamera()->GetViewMatrix();
+	vsData.projection = Camera::GetCurrentCamera()->GetProjectionMatrix();
+	psData.cameraPosition = Camera::GetCurrentCamera()->GetTransform().GetPosition();
 
-	int numberLights = (int)lights.size();
-	if (numberLights > 5) numberLights = 5;
-	memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
+	LightObject::PlaceLightsInPS(psData);
 
 	for (int i = 0; i < entities.size(); i++)
 	{
@@ -583,8 +501,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		// Sky
 		SkyVSData skyData = {};
-		skyData.view = cameras[currCam]->GetViewMatrix();
-		skyData.projection = cameras[currCam]->GetProjectionMatrix();
+		skyData.view = Camera::GetCurrentCamera()->GetViewMatrix();
+		skyData.projection = Camera::GetCurrentCamera()->GetProjectionMatrix();
 		FillAndBindNextConstantBuffer(&skyData, sizeof(skyData), D3D11_VERTEX_SHADER, 0);
 		Sky::GetInstance()->Draw();
 

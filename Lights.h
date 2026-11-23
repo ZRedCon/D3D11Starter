@@ -1,6 +1,10 @@
 #pragma once
 #include <DirectXMath.h>
+#include "BufferStructs.h"
 
+#include "Inspectable.h"
+
+#define NUM_LIGHTS 5
 
 #define LIGHT_TYPE_DIRECTIONAL	0
 #define LIGHT_TYPE_POINT		1
@@ -19,12 +23,14 @@ struct Light
 	DirectX::XMFLOAT2	Padding;
 };
 
-class LightObject
+class LightObject : public Registered<LightObject>
 {
 private:
 	Light light{};
 
 public:
+	static void PlaceLightsInPS(PixelColorBuffer& psData);
+
 	LightObject(int type);
 
 	LightObject(const LightObject& other);
@@ -54,5 +60,8 @@ public:
 	LightObject& SetSpotOuterAngle(float outerAngle);
 
 	operator Light() const;
+
+	void Inspector() override;
+	void InspectStatics() override;
 };
 

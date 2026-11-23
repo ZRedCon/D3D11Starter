@@ -1,7 +1,8 @@
 #include "GameEntity.h"
 
-GameEntity::GameEntity(std::shared_ptr<Mesh> startMesh, std::shared_ptr<Material> startMaterial)
+GameEntity::GameEntity(std::string _name, std::shared_ptr<Mesh> startMesh, std::shared_ptr<Material> startMaterial)
 {
+	name = _name;
 	mesh = startMesh;
 	material = startMaterial;
 	transform = std::make_shared<Transform>();
@@ -13,14 +14,14 @@ std::shared_ptr<Mesh> GameEntity::GetMesh() { return mesh; }
 void GameEntity::SetMaterial(std::shared_ptr<Material> newMaterial) { material = newMaterial; }
 void GameEntity::Draw() { mesh->Draw(); }
 
-void GameEntity::Inspector(std::string name)
+void GameEntity::Inspector()
 {
 	if (ImGui::CollapsingHeader(("Entity " + name + ":").c_str()))
 	{
 		ImGui::Indent();
-		transform->Inspector(name);
-		mesh->Inspector(name);
-		material->Inspector(name);
+		transform->Inspector();
+		mesh->Inspector();
+		material->Inspector();
 		ImGui::Unindent();
 	}
 }

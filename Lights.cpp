@@ -1,5 +1,17 @@
 #include "Lights.h"
 
+void LightObject::PlaceLightsInPS(PixelColorBuffer& psData)
+{
+	int numberLights = Count();
+	if (numberLights > 5) 
+	{
+		numberLights = 5;
+		printf("Error: Too many lights");
+	}
+
+	memcpy(psData.light, &GetInstances(), sizeof(Light) * numberLights);
+}
+
 LightObject::LightObject(int type)
 {
 	light.Type = type;
@@ -96,4 +108,31 @@ LightObject& LightObject::SetSpotOuterAngle(float outerAngle)
 LightObject::operator Light() const
 {
 	return light;
+}
+
+static std::string GetLightType(Light l)
+{
+	switch (l.Type)
+	{
+	case LIGHT_TYPE_DIRECTIONAL: return "DIRECTIONAL";
+	case LIGHT_TYPE_POINT: return "POINT";
+	case LIGHT_TYPE_SPOT: return "SPOT";
+	default: return "Invalid Type, something has gone horribly, horribly wrong!";
+	}
+}
+
+void LightObject::Inspector()
+{
+	if (ImGui::CollapsingHeader(name.c_str())) {
+		ImGui::Indent();
+		ImGui::LabelText("", ("Type: " + GetLightType(light)).c_str());
+		ImGui::ColorEdit3((name + "'s Color").c_str(), &light.Color.x);
+		ImGui::DragFloat((name + "'s Intensity").c_str(), &light.Intensity, 0.05f, 0.0f, 200.0f);
+		ImGui::Unindent();
+	}
+}
+
+void LightObject::InspectStatics()
+{
+	
 }

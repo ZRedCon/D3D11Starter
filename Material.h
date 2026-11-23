@@ -12,18 +12,14 @@
 #include "Vertex.h"
 #include "Texture2D.h"
 
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_dx11.h"
-#include "ImGui/imgui_impl_win32.h"
+#include "Inspectable.h"
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
-class Material
+class Material : public Registered<Material>
 {
 private:
-	static std::unordered_map<std::string, std::shared_ptr<Material>> materials;
-
 	XMFLOAT4 tint;
 	ComPtr<ID3D11VertexShader> vertexShader;
 	ComPtr<ID3D11PixelShader> pixelShader;
@@ -40,7 +36,7 @@ public:
 	Material(std::string name);
 	
 	Material& StorePBRTextures(SRVPtr albedo, SRVPtr normal, SRVPtr roughness, SRVPtr metallic);
-	Material& StorePBRTextures(const std::wstring prefix, const std::wstring suffix,
+	Material& StorePBRTextures(const std::wstring prefix, const std::wstring suffix, 
 		const std::wstring albedo = L"_albedo", const std::wstring normal = L"_normals",
 		const std::wstring roughness = L"_roughness", const std::wstring metal = L"_metal");
 
@@ -64,8 +60,7 @@ public:
 	Material& SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader);
 	Material& SetShaders(ComPtr<ID3D11PixelShader> newPixelShader, ComPtr<ID3D11VertexShader> newVertexShader);
 
-	void Inspector(std::string name);
-
-	static std::shared_ptr<Material> MaterialAt(std::string);
+	void Inspector() override;
+	void InspectStatics() override;
 };
 

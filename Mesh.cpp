@@ -40,15 +40,19 @@ void Mesh::CreateBuffers(Vertex vertices[], unsigned int numVertices, unsigned i
 	}
 }
 
-Mesh::Mesh(Vertex vertices[], unsigned int numVertices,
+
+Mesh::Mesh(std::string _name, Vertex vertices[], unsigned int numVertices,
 	unsigned int indicies[], unsigned int numIndicies)
 {
+	name = _name;
 	CalculateTangents(vertices, numVertices, indicies, numIndicies);
 	CreateBuffers(vertices, numVertices, indicies, numIndicies);
 }
 
-Mesh::Mesh(const char* fileToLoad)
+Mesh::Mesh(std::string _name, const char* fileToLoad)
 {
+	name = _name;
+
 	// Author: Chris Cascioli
 	// Latest Revision: 02/2026
 	// Purpose: Basic .OBJ 3D model loading, supporting positions, uvs and normals
@@ -410,7 +414,7 @@ void Mesh::Draw()
 		0);						// Offset to add to each index when looking up vertices
 }
 
-void Mesh::Inspector(std::string name)
+void Mesh::Inspector()
 {
 	if (ImGui::CollapsingHeader((name + " Mesh").c_str()))
 	{
@@ -420,4 +424,9 @@ void Mesh::Inspector(std::string name)
 		ImGui::Text("%s Indices: %i", name.c_str(), indexBufferSize);
 		ImGui::Unindent();
 	}
+}
+
+void Mesh::InspectStatics()
+{
+	// Display the names of all meshes
 }

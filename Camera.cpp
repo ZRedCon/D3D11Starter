@@ -1,8 +1,21 @@
 #include "Camera.h"
-#include <iostream>
 
-Camera::Camera(float aspectRatio, XMFLOAT3 initialPosition)
+void Camera::UpdateAllCamerasProjMatrix()
 {
+	if (currCam == "") return;
+	for (auto cam : GetInstances())
+		cam->UpdateProjectionMatrix(Window::AspectRatio());
+
+}
+
+std::shared_ptr<Camera> Camera::GetCurrentCamera() { return Get(currCam); 
+
+Camera::Camera(std::string _name, float aspectRatio, XMFLOAT3 initialPosition)
+{
+	name = _name;
+	if (currCam == "")
+		currCam = _name;
+
 	transform = std::make_unique<Transform>();
 	transform->SetPosition( initialPosition );
 	aspRatio = aspectRatio;
@@ -12,6 +25,7 @@ Camera::Camera(float aspectRatio, XMFLOAT3 initialPosition)
 	UpdateViewMatrix();
 	UpdateProjectionMatrix(aspRatio);
 }
+
 
 Transform& Camera::GetTransform()
 {
@@ -120,4 +134,29 @@ void Camera::Update(float dt)
 	}
 
 	UpdateViewMatrix();
+}
+
+void Camera::Inspector()
+{
+	if (ImGui::CollapsingHeader(name.c_str()))
+	{
+		ImGui::Indent();
+		transform->Inspector();
+		ImGui::DragFloat((name + " Fov").c_str(), &fov, 0.01f, 0.1f, XM_2PI);
+
+		XMFLOAT2 newPlanes = GetClipPlanes();
+		ImGui::DragFloat2((name + " Clipping planes (near|far)").c_str(), &newPlanes.x, 0.001f, 0.01f, 10000.0f);
+		if (newPlanes.x >= newPlanes.y) newPlanes.y = newPlanes.x + 0.001f;
+		SetClipPlanes(newPlanes);
+
+		if (ImGui::Button((name + " Set as Main Camera").c_str()))
+			currCam = name;
+
+		ImGui::Unindent();
+	}
+}
+
+void Camera::InspectStatics()
+{
+	ImGui::Text(std::string("Active Camera: " + currCam).c_str());
 }

@@ -13,9 +13,8 @@
 
 #include "Graphics.h"
 #include "Vertex.h"
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_dx11.h"
-#include "ImGui/imgui_impl_win32.h"
+
+#include "Inspectable.h"
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -23,7 +22,7 @@ using namespace Microsoft::WRL;
 typedef ComPtr<ID3D11Buffer> BufPtr;
 
 
-class Mesh
+class Mesh : public Registered<Mesh>
 {
 private:
 	// Vertex buffer
@@ -42,7 +41,7 @@ public:
 	/// for you assuming indicies to be 0->size 
 	/// </summary>
 	template <std::size_t N>
-	Mesh(std::array<Vertex, N> vertices)			// Note for future Zach, as it turns out Lambdas are turing complete
+	Mesh(std::string _name, std::array<Vertex, N> vertices)			// Note for future Zach, as it turns out Lambdas are turing complete
 		: Mesh(vertices, []() {						// 1. Evil Lambda
 			std::array<unsigned int, N> indicies;	// 2. Create second array now
 			for (int i = 0; i < N; i++)				// 3. increment since for some reason c++ with all it's bloat has 
@@ -56,15 +55,15 @@ public:
 	/// Mesh constructor that automatically figures out the sizes of the two arrays
 	/// </summary>
 	template <std::size_t N, std::size_t M>
-	Mesh(std::array<Vertex, N> vertices, std::array<unsigned int, M> indicies)	// 1. Wrapper
-		: Mesh(vertices.data(), int(N), indicies.data(), int(M)) { }			// 2. Candy
+	Mesh(std::string _name, std::array<Vertex, N> vertices, std::array<unsigned int, M> indicies)	// 1. Wrapper
+		: Mesh(vertices.data(), int(N), indicies.data(), int(M)) { }								// 2. Candy
 
 	/// <summary>
 	/// Default constructor
 	/// </summary>
-	Mesh(Vertex vertices[], unsigned int numVertices,		
+	Mesh(std::string _name, Vertex vertices[], unsigned int numVertices,
 		unsigned int indicies[], unsigned int numIndicies);
-	Mesh(const char* fileToLoad);
+	Mesh(std::string _name, const char* fileToLoad);
 
 	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
 
@@ -75,5 +74,6 @@ public:
 	int GetIndexCount();
 	void Draw();
 
-	void Inspector(std::string name);
+	void Inspector() override;
+	void InspectStatics() override;
 };

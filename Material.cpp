@@ -1,7 +1,5 @@
 #include "Material.h"
 
-std::unordered_map<std::string, std::shared_ptr<Material>> Material::materials;
-
 Material::Material(std::string name, XMFLOAT4 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader)
 {
 	tint = startTint;
@@ -32,12 +30,11 @@ Material& Material::StorePBRTextures(
 	const std::wstring roughness, const std::wstring metal)
 {
 	return StorePBRTextures(
-		Texture2D(prefix + albedo + suffix),
-		Texture2D(prefix + normal + suffix),
-		Texture2D(prefix + roughness + suffix),
-		Texture2D(prefix + metal + suffix));
+		Texture2D("albedo", prefix + albedo + suffix),
+		Texture2D("normal", prefix + normal + suffix),
+		Texture2D("roughness", prefix + roughness + suffix),
+		Texture2D("metal", prefix + metal + suffix));
 }
-
 
 Material& Material::AddTextureSRVAndSampler(unsigned int slot, SRVPtr srv, ComPtr<ID3D11SamplerState> sampler)
 {
@@ -109,7 +106,7 @@ Material& Material::SetShaders(ComPtr<ID3D11PixelShader> newPixelShader, ComPtr<
 	return SetPixelShader(newPixelShader);
 }
 
-void Material::Inspector(std::string name)
+void Material::Inspector()
 {
 	if (ImGui::CollapsingHeader((name + " Material").c_str()))
 	{
@@ -132,10 +129,7 @@ void Material::Inspector(std::string name)
 	}
 }
 
-std::shared_ptr<Material> Material::MaterialAt(std::string key)
+void Material::InspectStatics()
 {
-	auto it = materials.find(key);
-	if (it == materials.end())
-		it = materials.emplace(key, std::make_shared<Material>(key)).first;
-	return it->second;
+
 }

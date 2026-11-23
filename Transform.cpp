@@ -7,8 +7,9 @@ const XMFLOAT3 Transform::RIGHT    = XMFLOAT3( 1,  0,  0 );
 const XMFLOAT3 Transform::UP       = XMFLOAT3( 0,  1,  0 );
 const XMFLOAT3 Transform::DOWN     = XMFLOAT3( 0, -1,  0 );
 
-Transform::Transform()
+Transform::Transform(std::string _name)
 {
+	name = _name;
 	dirty = false;
 	position = XMFLOAT3(0, 0, 0);
 	rotation = XMFLOAT3(0, 0, 0);
@@ -76,100 +77,113 @@ XMFLOAT4X4 Transform::GetWorldInverseTransposeMatrix()
 	if (dirty) RebuildMatricies();
 	return worldInverseTranspose;
 }
-void Transform::SetPosition(XMFLOAT3 newPosition)
+Transform& Transform::SetPosition(XMFLOAT3 newPosition)
 {
-	//if (newPosition.x == position.x && newPosition.y == position.y && newPosition.z == position.z) return;
 	dirty = true;
 	position = newPosition;
+	return *this;
 }
-void Transform::SetRotation(XMFLOAT3 newRotation)
+Transform& Transform::SetRotation(XMFLOAT3 newRotation)
 {
 	dirty = true;
 	rotation = newRotation;
 	RebuldDirectionVectors();
+	return *this;
 }
-void Transform::SetScale(XMFLOAT3 newScale)
+Transform& Transform::SetScale(XMFLOAT3 newScale)
 {
 	dirty = true;
 	scale = newScale;
+	return *this;
 }
-void Transform::SetPosition(float x, float y, float z)
+Transform& Transform::SetPosition(float x, float y, float z)
 {
 	dirty = true;
 	position = XMFLOAT3(x, y, z);
+	return *this;
 }
-void Transform::SetRotation(float pitch, float yaw, float roll)
+Transform& Transform::SetRotation(float pitch, float yaw, float roll)
 {
 	dirty = true;
 	rotation = XMFLOAT3(pitch, yaw, roll);
 	RebuldDirectionVectors();
+	return *this;
 }
 
-void Transform::SetScale(float x, float y, float z)
+Transform& Transform::SetScale(float x, float y, float z)
 {
 	dirty = true;
 	scale = XMFLOAT3(x, y, z);
+	return *this;
 }
-void Transform::MoveAbsolute(XMFLOAT3 newPosition)
+Transform& Transform::MoveAbsolute(XMFLOAT3 newPosition)
 {
 	dirty = true;
 	position.x += newPosition.x;
 	position.y += newPosition.y;
 	position.z += newPosition.z;
+	return *this;
 }
-void Transform::MoveAbsolute(float x, float y, float z)
+Transform& Transform::MoveAbsolute(float x, float y, float z)
 {
 	dirty = true;
 	position.x += x;
 	position.y += y;
 	position.z += z;
+	return *this;
 }
-void Transform::MoveRelative(XMFLOAT3 offset)
+Transform& Transform::MoveRelative(XMFLOAT3 offset)
 {
 	auto quat = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
 	XMFLOAT3 rotOffset;
 	XMStoreFloat3(&rotOffset, XMVector3Rotate(XMLoadFloat3(&offset), quat));
 	MoveAbsolute( rotOffset );
+	return *this;
 }
-void Transform::MoveRelative(float x, float y, float z)
+Transform& Transform::MoveRelative(float x, float y, float z)
 { 
 	auto quat = XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
 	XMFLOAT3 rotOffset(x,y,z);
 	XMStoreFloat3(&rotOffset, XMVector3Rotate(XMLoadFloat3(&rotOffset), quat));
 	MoveAbsolute(rotOffset);
+	return *this;
 }
-void Transform::Rotate(XMFLOAT3 newRotation)
+Transform& Transform::Rotate(XMFLOAT3 newRotation)
 {
 	dirty = true;
 	rotation.x += newRotation.x;
 	rotation.y += newRotation.y;
 	rotation.z += newRotation.z;
 	RebuldDirectionVectors();
+	return *this;
 }
-void Transform::Rotate(float pitch, float yaw, float roll)
+Transform& Transform::Rotate(float pitch, float yaw, float roll)
 {
 	dirty = true;
 	rotation.x += pitch;
 	rotation.y += yaw;
 	rotation.z += roll;
 	RebuldDirectionVectors();
+	return *this;
 }
-void Transform::Scale(XMFLOAT3 newScale)
+Transform& Transform::Scale(XMFLOAT3 newScale)
 {
 	dirty = true;
 	scale.x *= newScale.x;
 	scale.y *= newScale.y;
 	scale.z *= newScale.z;
+	return *this;
 }
-void Transform::Scale(float x, float y, float z)
+Transform& Transform::Scale(float x, float y, float z)
 {
 	dirty = true;
 	scale.x *= x;
 	scale.y *= y;
 	scale.z *= z;
+	return *this;
 }
 
-void Transform::Inspector(std::string name)
+void Transform::Inspector()
 {
 	if (ImGui::CollapsingHeader((name + " Transform").c_str()))
 	{
