@@ -1,12 +1,12 @@
 #include "Material.h"
 
+std::unordered_map<std::string, std::shared_ptr<Material>> Material::materials;
+
 Material::Material(std::string name, XMFLOAT4 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader)
 {
 	tint = startTint;
 	vertexShader = startVertexShader;
 	pixelShader = startPixelShader;
-
-	materials[name] = std::make_shared<Material>(this);
 }
 
 Material::Material(std::string name, XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader) :
@@ -16,17 +16,28 @@ Material::Material(std::string name, ComPtr<ID3D11VertexShader> startVertexShade
 	Material(name, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), startVertexShader, startPixelShader) {}
 
 Material::Material(std::string name) :
-	Material(name, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f), nullptr, nullptr) {}
+	Material(name, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), nullptr, nullptr) {}
 
 Material& Material::StorePBRTextures(SRVPtr albedo, SRVPtr normal, SRVPtr roughness, SRVPtr metallic)
 {
 	AddTextureSRV(0, albedo);
 	AddTextureSRV(1, normal);
 	AddTextureSRV(2, roughness);
-	AddTextureSRV(3, metallic);
-
-	return *this;
+	return AddTextureSRV(3, metallic);
 }
+
+Material& Material::StorePBRTextures(
+	const std::wstring prefix, const std::wstring suffix,
+	const std::wstring albedo, const std::wstring normal, 
+	const std::wstring roughness, const std::wstring metal)
+{
+	return StorePBRTextures(
+		Texture2D(prefix + albedo + suffix),
+		Texture2D(prefix + normal + suffix),
+		Texture2D(prefix + roughness + suffix),
+		Texture2D(prefix + metal + suffix));
+}
+
 
 Material& Material::AddTextureSRVAndSampler(unsigned int slot, SRVPtr srv, ComPtr<ID3D11SamplerState> sampler)
 {
@@ -123,6 +134,8 @@ void Material::Inspector(std::string name)
 
 std::shared_ptr<Material> Material::MaterialAt(std::string key)
 {
-	if (!materials.contains(key)) auto blank = Material(key);
-	return materials[key];
+	auto it = materials.find(key);
+	if (it == materials.end())
+		it = materials.emplace(key, std::make_shared<Material>(key)).first;
+	return it->second;
 }

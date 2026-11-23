@@ -146,14 +146,18 @@ Game::Game()
 
 	// Make the entities
 	{
-		std::string meshesOrder[] = { "cube", "cylinder", "helix", "sphere", "torus", "quad", "quad_double_sided"};
-		for (int y = 0; y < 3; y++)
+		std::string meshesOrder[] = { "cube", "cylinder", "helix", "sphere", "torus", "quad", "quad_double_sided" };
+		std::string matOrder[] = { "cobblestone", "bronze", "floor", "paint", "rough", "scratched", "wood" };
+		static const int NUM_Y = 7;
+		static const int HALF_NUM = NUM_Y / 2;
+		static const int GRID_SIZE = 4;
+		for (int y = 0; y < NUM_Y; y++)
 		{
-			std::string currMaterial = "cobblestone material";
+			std::string mat = matOrder[y];
 			int x = 0;
 			for (const auto& keys : meshes)
 			{
-				AddEntity(meshesOrder[x], currMaterial).GetTransform()->MoveAbsolute(float(x * 4), float(8 + (y * -4.0f)), 10.0f);
+				AddEntity(meshesOrder[x], mat).GetTransform()->MoveAbsolute(float(x * GRID_SIZE), float(NUM_Y - y - HALF_NUM) * GRID_SIZE, 10.0f);
 				x++;
 			}
 		}
@@ -203,7 +207,6 @@ Game::Game()
 
 		int numberLights = (int)lights.size();
 		if (numberLights > 5) numberLights = 5;
-
 		memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
 	}
 }
@@ -331,9 +334,6 @@ void Game::LoadShaders()
 			inputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
 	}
 
-	// Material stuff
-	//materials[ "cobblestone material" ] = std::make_shared<Material>(vertexShader, pixelShader);
-
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -343,16 +343,43 @@ void Game::LoadShaders()
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	Graphics::Device->CreateSamplerState(&sampDesc, samplerState.GetAddressOf());
 	
+	// Materials
+	{
+		Material::MaterialAt("cobblestone")->
+			SetShaders(pixelShader, vertexShader)
+			.AddSampler(0, samplerState)
+			.StorePBRTextures(L"PBR/cobblestone", L".png");
 
-	// Normals and tangents for materials
-	SRVPtr cobblestone = Texture2D(L"Textures with Normal Maps/cobblestone.png");
-	SRVPtr cobblestoneNormals = Texture2D(L"Textures with Normal Maps/cobblestone_normals.png");
-	SRVPtr flatNormals = Texture2D(L"Textures with Normal Maps/flat_normals.png");
+		Material::MaterialAt("bronze")->
+			SetShaders(pixelShader, vertexShader)
+			.AddSampler(0, samplerState)
+			.StorePBRTextures(L"PBR/bronze", L".png");
+		
+		Material::MaterialAt("floor")->
+			SetShaders(pixelShader, vertexShader)
+			.AddSampler(0, samplerState)
+			.StorePBRTextures(L"PBR/floor", L".png");
 
-	Material::MaterialAt("cobblestone material")->
-		SetShaders(pixelShader, vertexShader)
-		.AddTextureSRVAndSampler(0, Texture2D(L"Textures with Normal Maps/cobblestone.png"), samplerState)
-		.AddTextureSRV(1, cobblestoneNormals);
+		Material::MaterialAt("paint")->
+			SetShaders(pixelShader, vertexShader)
+			.AddSampler(0, samplerState)
+			.StorePBRTextures(L"PBR/paint", L".png");
+
+		Material::MaterialAt("rough")->
+			SetShaders(pixelShader, vertexShader)
+			.AddSampler(0, samplerState)
+			.StorePBRTextures(L"PBR/rough", L".png");
+
+		Material::MaterialAt("scratched")->
+			SetShaders(pixelShader, vertexShader)
+			.AddSampler(0, samplerState)
+			.StorePBRTextures(L"PBR/scratched", L".png");
+
+		Material::MaterialAt("wood")->
+			SetShaders(pixelShader, vertexShader)
+			.AddSampler(0, samplerState)
+			.StorePBRTextures(L"PBR/wood", L".png");
+	}
 }
 
 // --------------------------------------------------------
@@ -376,10 +403,6 @@ void Game::CreateGeometry()
 		MakeSkyPaths(L"Textures/Skies/Planet/"));
 }
 
-// --------------------------------------------------------
-// Handle resizing to match the new window size
-//  - Eventually, we'll want to update our 3D camera
-// --------------------------------------------------------
 void Game::OnResize()
 {
 	if (currCam > -1)
@@ -531,6 +554,10 @@ void Game::Draw(float deltaTime, float totalTime)
 	vsData.view = cameras[ currCam ]->GetViewMatrix();
 	vsData.projection = cameras[ currCam ]->GetProjectionMatrix();
 	psData.cameraPosition = cameras[ currCam ]->GetTransform().GetPosition();
+
+	int numberLights = (int)lights.size();
+	if (numberLights > 5) numberLights = 5;
+	memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
 
 	for (int i = 0; i < entities.size(); i++)
 	{

@@ -40,6 +40,10 @@ public:
 	Material(std::string name);
 	
 	Material& StorePBRTextures(SRVPtr albedo, SRVPtr normal, SRVPtr roughness, SRVPtr metallic);
+	Material& StorePBRTextures(const std::wstring prefix, const std::wstring suffix,
+		const std::wstring albedo = L"_albedo", const std::wstring normal = L"_normals",
+		const std::wstring roughness = L"_roughness", const std::wstring metal = L"_metal");
+
 
 	Material& AddTextureSRVAndSampler(unsigned int slot, SRVPtr srv, ComPtr<ID3D11SamplerState> sampler);
 	Material& AddTextureSRV(unsigned int slot, SRVPtr srv);

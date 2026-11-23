@@ -28,8 +28,8 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3x3 tanBiNorms = float3x3(tangents, biTangents, normals);
     input.normal = mul(unpackedNormals, tanBiNorms);
     
-    float roughness = 0.5; //RoughnessMap.Sample(BasicSampler, adjustedUV).r;
-    float metalness = 1.0; //MetalnessMap.Sample(BasicSampler, adjustedUV).r;
+    float roughness = RoughnessMap.Sample(BasicSampler, adjustedUV).r;
+    float metalness = MetalnessMap.Sample(BasicSampler, adjustedUV).r;
     float4 surfaceColor = SampleTexture(SurfaceTexture, BasicSampler, adjustedUV) * AS_4(color.rgb);
     float3 f0 = lerp(0.04, surfaceColor.rgb, metalness);
     

@@ -1,23 +1,28 @@
 #include "Texture2D.h"
 
+std::unordered_map<std::wstring, std::shared_ptr<Texture2D>> Texture2D::textures;
+
 Texture2D::Texture2D(std::wstring pathName)
 {
-	DirectX::CreateWICTextureFromFile(Graphics::Device.Get(), Graphics::Context.Get(),
-		FixPath(ASSETS_TEXTURE_PATH + pathName).c_str(), 0, srv.GetAddressOf());
+	std::wstring fullPath = FixPath(ASSETS_TEXTURE_PATH + pathName);
+	auto hr = DirectX::CreateWICTextureFromFile(
+		Graphics::Device.Get(), 
+		Graphics::Context.Get(), 
+		fullPath.c_str(), 
+		nullptr, 
+		srv.GetAddressOf());
 
-	textures[pathName] = std::shared_ptr<Texture2D>(this);
+	if (FAILED(hr)) printf("Asset Err, Texture2D couldn't find asset at %ls\n", fullPath.c_str());
 }
 
 SRVPtr Texture2D::GetSRV() { return srv; }
 Texture2D::operator SRVPtr() const { return srv; }
-
-SRVPtr Texture2D::GetSRV(std::wstring key)
-{
-	return textures.contains(key) ? textures[key]->GetSRV() : Texture2D(key);
-}
+SRVPtr Texture2D::GetSRV(std::wstring key) { return GetTexture(key)->GetSRV(); }
 
 std::shared_ptr<Texture2D> Texture2D::GetTexture(std::wstring key)
 {
-	if (!textures.contains(key)) auto blank = Texture2D(key);
-	return textures[key];
+	auto it = textures.find(key);
+	if (it == textures.end())
+		it = textures.emplace(key, std::make_shared<Texture2D>(key)).first;
+	return it->second;
 }
