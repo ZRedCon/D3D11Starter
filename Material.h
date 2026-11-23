@@ -6,9 +6,11 @@
 #include <cstddef>
 #include <memory>
 #include <iostream>
+#include <unordered_map>
 
 #include "Graphics.h"
 #include "Vertex.h"
+#include "Texture2D.h"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -17,11 +19,11 @@
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
-typedef ComPtr<ID3D11ShaderResourceView> SRVPtr;
-
 class Material
 {
 private:
+	static std::unordered_map<std::string, std::shared_ptr<Material>> materials;
+
 	XMFLOAT4 tint;
 	ComPtr<ID3D11VertexShader> vertexShader;
 	ComPtr<ID3D11PixelShader> pixelShader;
@@ -32,9 +34,10 @@ private:
 	XMFLOAT2 uvScale = XMFLOAT2(1, 1);
 	XMFLOAT2 uvOffset = XMFLOAT2(0, 0);
 public:
-	Material(XMFLOAT4 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
-	Material(XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
-	Material(ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
+	Material(std::string name, XMFLOAT4 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
+	Material(std::string name, XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
+	Material(std::string name, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader);
+	Material(std::string name);
 	
 	Material& StorePBRTextures(SRVPtr albedo, SRVPtr normal, SRVPtr roughness, SRVPtr metallic);
 
@@ -55,7 +58,10 @@ public:
 	Material& SetTint(XMFLOAT4 newTint);
 	Material& SetVertexShader(ComPtr<ID3D11VertexShader> newVertexShader);
 	Material& SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader);
+	Material& SetShaders(ComPtr<ID3D11PixelShader> newPixelShader, ComPtr<ID3D11VertexShader> newVertexShader);
 
 	void Inspector(std::string name);
+
+	static std::shared_ptr<Material> MaterialAt(std::string);
 };
 

@@ -1,17 +1,22 @@
 #include "Material.h"
 
-Material::Material(XMFLOAT4 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader)
+Material::Material(std::string name, XMFLOAT4 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader)
 {
 	tint = startTint;
 	vertexShader = startVertexShader;
 	pixelShader = startPixelShader;
+
+	materials[name] = std::make_shared<Material>(this);
 }
 
-Material::Material(XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader) :
-	Material(XMFLOAT4(startTint.x, startTint.y, startTint.z, 1.0f), startVertexShader, startPixelShader) {}
+Material::Material(std::string name, XMFLOAT3 startTint, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader) :
+	Material(name, XMFLOAT4(startTint.x, startTint.y, startTint.z, 1.0f), startVertexShader, startPixelShader) {}
 
-Material::Material(ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader) :
-	Material(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), startVertexShader, startPixelShader) {}
+Material::Material(std::string name, ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader) :
+	Material(name, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), startVertexShader, startPixelShader) {}
+
+Material::Material(std::string name) :
+	Material(name, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f), nullptr, nullptr) {}
 
 Material& Material::StorePBRTextures(SRVPtr albedo, SRVPtr normal, SRVPtr roughness, SRVPtr metallic)
 {
@@ -87,6 +92,12 @@ Material& Material::SetPixelShader(ComPtr<ID3D11PixelShader> newPixelShader)
 	return *this;
 }
 
+Material& Material::SetShaders(ComPtr<ID3D11PixelShader> newPixelShader, ComPtr<ID3D11VertexShader> newVertexShader)
+{
+	SetVertexShader(newVertexShader);
+	return SetPixelShader(newPixelShader);
+}
+
 void Material::Inspector(std::string name)
 {
 	if (ImGui::CollapsingHeader((name + " Material").c_str()))
@@ -108,4 +119,10 @@ void Material::Inspector(std::string name)
 
 		ImGui::Unindent();
 	}
+}
+
+std::shared_ptr<Material> Material::MaterialAt(std::string key)
+{
+	if (!materials.contains(key)) auto blank = Material(key);
+	return materials[key];
 }

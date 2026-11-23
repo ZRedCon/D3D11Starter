@@ -1,8 +1,10 @@
 #include "Sky.h"
 
+std::shared_ptr<Sky> Sky::Instance = nullptr;
+
 Sky::Sky(std::shared_ptr<Mesh> _mesh, ComPtr<ID3D11SamplerState> _sampler, 
 	ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader, 
-	std::wstring paths[6])
+	const std::array<std::wstring, 6>& paths)
 {
 	mesh = _mesh;
 	sampler = _sampler;
@@ -30,6 +32,14 @@ Sky::Sky(std::shared_ptr<Mesh> _mesh, ComPtr<ID3D11SamplerState> _sampler,
 		paths[5].c_str());
 }
 
+
+void Sky::MakeSky(std::shared_ptr<Mesh> _mesh, ComPtr<ID3D11SamplerState> _sampler, 
+	ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader, 
+	const std::array<std::wstring, 6>& paths)
+{
+	if (Instance) return;
+	Instance = std::shared_ptr<Sky>(new Sky(_mesh, _sampler, startVertexShader, startPixelShader, paths));
+}
 
 // --------------------------------------------------------
 // Loads six individual textures (the six faces of a cube map), then
@@ -134,4 +144,39 @@ void Sky::Draw()
 
 	Graphics::Context->RSSetState(0);
 	Graphics::Context->OMSetDepthStencilState(0, 0);
+}
+
+std::shared_ptr<Sky> Sky::GetInstance()
+{
+	return Instance;
+}
+
+Sky& Sky::SetSampler(ComPtr<ID3D11SamplerState> _sampler) 
+{ 
+	sampler = _sampler; 
+	return *this;
+}
+
+Sky& Sky::SetTexture(std::wstring paths[6])
+{
+	srv = CreateCubemap(
+		paths[0].c_str(),
+		paths[1].c_str(),
+		paths[2].c_str(),
+		paths[3].c_str(),
+		paths[4].c_str(),
+		paths[5].c_str());
+	return *this;
+}
+
+Sky& Sky::SetVS(ComPtr<ID3D11VertexShader> _vs) 
+{ 
+	vs = _vs;
+	return *this;
+}
+
+Sky& Sky::SetPS(ComPtr<ID3D11PixelShader> _ps) 
+{ 
+	ps = _ps;
+	return *this;
 }

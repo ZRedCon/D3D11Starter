@@ -22,6 +22,10 @@
 class Sky
 {
 private:
+	static std::shared_ptr<Sky> Instance;
+	Sky(std::shared_ptr<Mesh> _mesh, ComPtr<ID3D11SamplerState> _sampler,
+		ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader,
+		const std::array<std::wstring, 6>& paths);
 	ComPtr<ID3D11SamplerState> sampler;
 	ComPtr<ID3D11ShaderResourceView> srv;
 	ComPtr<ID3D11DepthStencilState> depthStencil;
@@ -33,9 +37,9 @@ private:
 	std::shared_ptr<Mesh> mesh; 
 
 public:
-	Sky(std::shared_ptr<Mesh> _mesh, ComPtr<ID3D11SamplerState> _sampler, 
-		ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader, 
-		std::wstring paths[6]);
+	static void MakeSky(std::shared_ptr<Mesh> _mesh, ComPtr<ID3D11SamplerState> _sampler,
+		ComPtr<ID3D11VertexShader> startVertexShader, ComPtr<ID3D11PixelShader> startPixelShader,
+		const std::array<std::wstring, 6>& paths);
 	ComPtr<ID3D11ShaderResourceView> CreateCubemap(
 		const wchar_t* right,
 		const wchar_t* left,
@@ -45,4 +49,11 @@ public:
 		const wchar_t* back);
 
 	void Draw();
+	static std::shared_ptr<Sky> GetInstance();
+
+	Sky& SetSampler(ComPtr<ID3D11SamplerState> _sampler);
+	Sky& SetTexture(std::wstring paths[6]);
+	Sky& SetVS(ComPtr<ID3D11VertexShader> startVertexShader);
+	Sky& SetPS(ComPtr<ID3D11PixelShader> startPixelShader);
+
 };

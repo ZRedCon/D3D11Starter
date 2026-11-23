@@ -36,27 +36,24 @@
 // The Color mode for the project: (DARKMODE / LIGHTMODE)
 #define DARKMODE
 
-/*Break stupid auto comment runoff*/
 // Shoud ImGui display, will also display if DEBUG is defined
 #define ENABLE_IMGUI
 
-/*Break stupid auto comment runoff*/
 // Wrapper that blocks out a ImGui window creation
 // Avoid using commas please I swear to god I don't want to have to fix that :sob:
 #define ImGui_Window(windowName, block) ImGui::Begin(windowName); { block } ImGui::End();
 
 #define MakeMesh(name, path) meshes[name] = std::make_shared<Mesh>(FixPath( path ).c_str());
 #define MakeSkyPaths(path) { FixPath(ASSETS_PATH + path + L"right.png"), FixPath(ASSETS_PATH + path + L"left.png"), FixPath(ASSETS_PATH + path + L"up.png"), FixPath(ASSETS_PATH + path + L"down.png"), FixPath(ASSETS_PATH + path + L"front.png"), FixPath(ASSETS_PATH + path + L"back.png") }
-#define RoundToMultiple(dataSize, intervalSize) ((dataSize + intervalSize - 1) / intervalSize * intervalSize)
-
+#define RoundToMultiple(dataSize, intervalSize) (((dataSize) + (intervalSize) - 1) / (intervalSize) * (intervalSize))
+#define GetAssetPath(subpath) FixPath(ASSETS_PATH + subpath).c_str()
+#define DeviceAndContextGet Graphics::Device.Get(), Graphics::Context.Get()
 
 // For the DirectX Math library
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
 static std::wstring ASSETS_PATH = L"../../Assets/";
-#define GetAssetPath(subpath) FixPath(ASSETS_PATH + subpath).c_str()
-#define DeviceAndContextGet Graphics::Device.Get(), Graphics::Context.Get()
 
 bool displayDemoPanel = true;
 std::unique_ptr<std::array<float, 4>> backgroundColor = std::make_unique<std::array<float, 4>>();
@@ -73,30 +70,18 @@ PixelColorBuffer psData;
 
 // -- Temp vars for current assignment(s) --
 std::unordered_map<std::string, std::shared_ptr<Mesh>> meshes;
-std::unordered_map<std::string, std::shared_ptr<Material>> materials;
-
 std::vector<GameEntity> entities;
 
 std::vector<std::shared_ptr<Camera>> cameras;
 int currCam = -1;
 
-ComPtr<ID3D11ShaderResourceView> greenScreen;
-ComPtr<ID3D11ShaderResourceView> gracias;
 ComPtr<ID3D11SamplerState> samplerState;
 
 std::vector<Light> lights;
-Light directionalLight1 = {};
-Light directionalLight2 = {};
-Light directionalLight3 = {};
-Light pointLight1 = {};
-Light spotLight1 = {};
-
-std::shared_ptr<Sky> sky;
-
 
 static GameEntity& AddEntity(std::string nameOfMesh, std::string nameOfMaterial)
 {
-	entities.push_back(GameEntity(meshes[ nameOfMesh ], materials[ nameOfMaterial ]));
+	entities.push_back(GameEntity(meshes[ nameOfMesh ], Material::MaterialAt(nameOfMaterial)));
 	return entities.back();
 }
 
@@ -314,10 +299,6 @@ void Game::LoadShaders()
 	ComPtr<ID3DBlob> pixelShaderBlob;
 	auto vertexShader = LoadVertexShader(L"VertexShader.cso", vertexShaderBlob);
 	auto pixelShader = LoadPixelShader(L"PixelShader.cso", pixelShaderBlob);
-	auto dbgUVShader = LoadPixelShader(L"DebugUVsPS.cso", pixelShaderBlob);
-	auto dbgNormalShader = LoadPixelShader(L"DebugNormalsPS.cso", pixelShaderBlob);
-	auto customPixelShader = LoadPixelShader(L"CustomPS.cso", pixelShaderBlob);
-	auto greenScreenShader = LoadPixelShader(L"GreenScreen.cso", pixelShaderBlob);
 
 	// Input layout stuff
 	{
@@ -351,27 +332,7 @@ void Game::LoadShaders()
 	}
 
 	// Material stuff
-	materials[ "top material" ] = std::make_shared<Material>(vertexShader, dbgNormalShader);
-	materials[ "middle material" ] = std::make_shared<Material>(vertexShader, dbgUVShader);
-	materials[ "white material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), vertexShader, pixelShader);
-	materials[ "red material" ] = std::make_shared<Material>(XMFLOAT4(1.0f, 0, 0, 1.0f), vertexShader, pixelShader);
-	materials[ "purple material" ] = std::make_shared<Material>(XMFLOAT4(1.0f,0, 1.0f, 1.0f), vertexShader, pixelShader);
-	materials[ "fancy material" ] = std::make_shared<Material>(vertexShader, customPixelShader);
-	materials[ "cobblestone material" ] = std::make_shared<Material>(vertexShader, pixelShader);
-
-	// Texture stuff
-	CreateWICTextureFromFile(
-		DeviceAndContextGet,
-		GetAssetPath(L"Textures/Grassy_ass_me_amigo.png"),
-		0,
-		gracias.GetAddressOf()
-	);
-	CreateWICTextureFromFile(
-		DeviceAndContextGet,
-		GetAssetPath(L"Textures/DumbFuck.png"),
-		0,
-		greenScreen.GetAddressOf()
-	);
+	//materials[ "cobblestone material" ] = std::make_shared<Material>(vertexShader, pixelShader);
 
 	D3D11_SAMPLER_DESC sampDesc = {};
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -387,22 +348,10 @@ void Game::LoadShaders()
 	SRVPtr cobblestone = Texture2D(L"Textures with Normal Maps/cobblestone.png");
 	SRVPtr cobblestoneNormals = Texture2D(L"Textures with Normal Maps/cobblestone_normals.png");
 	SRVPtr flatNormals = Texture2D(L"Textures with Normal Maps/flat_normals.png");
-	
-	materials["white material"]->
-		AddTextureSRVAndSampler(0, gracias, samplerState)
-		.SetUVScale(XMFLOAT2(5, 5))
-		.AddTextureSRV(1, flatNormals);
 
-	materials["red material"]->
-		AddTextureSRVAndSampler(0, gracias, samplerState)
-		.AddTextureSRV(1, flatNormals);
-
-	materials["purple material"]->
-		AddTextureSRVAndSampler(0, gracias, samplerState)
-		.AddTextureSRV(1, flatNormals);
-
-	materials["cobblestone material"]->
-		AddTextureSRVAndSampler(0, cobblestone, samplerState)
+	Material::MaterialAt("cobblestone material")->
+		SetShaders(pixelShader, vertexShader)
+		.AddTextureSRVAndSampler(0, Texture2D(L"Textures with Normal Maps/cobblestone.png"), samplerState)
 		.AddTextureSRV(1, cobblestoneNormals);
 }
 
@@ -419,16 +368,12 @@ void Game::CreateGeometry()
 	MakeMesh("quad", "../../Assets/Meshes/quad.bobj");
 	MakeMesh("quad_double_sided", "../../Assets/Meshes/quad_double_sided.bobj");
 
-	std::wstring skyPaths[6] = MakeSkyPaths(L"Textures/Skies/Planet/");
-
 	ComPtr<ID3DBlob> skyVSBlob;
 	ComPtr<ID3DBlob> skyPSBlob;
-	sky = std::make_shared<Sky>(
-		meshes["cube"],
-		samplerState,
+	Sky::MakeSky(meshes["cube"], samplerState,
 		LoadVertexShader(L"SkyVertexShader.cso", skyVSBlob),
 		LoadPixelShader(L"SkyPixelShader.cso", skyPSBlob),
-		skyPaths);
+		MakeSkyPaths(L"Textures/Skies/Planet/"));
 }
 
 // --------------------------------------------------------
@@ -544,11 +489,6 @@ static void BuildUI(float deltaTime)
 					ImGui::Unindent();
 				}
 			}
-			int numberLights = (int)lights.size();
-			if (numberLights > 5)
-				numberLights = 5;
-
-			memcpy(&psData.light, &lights[0], sizeof(Light) * numberLights);
 			ImGui::Unindent();
 		}
 	} ImGui::End();;
@@ -588,7 +528,6 @@ void Game::Draw(float deltaTime, float totalTime)
 		Graphics::Context->ClearDepthStencilView(Graphics::DepthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-
 	vsData.view = cameras[ currCam ]->GetViewMatrix();
 	vsData.projection = cameras[ currCam ]->GetProjectionMatrix();
 	psData.cameraPosition = cameras[ currCam ]->GetTransform().GetPosition();
@@ -613,25 +552,19 @@ void Game::Draw(float deltaTime, float totalTime)
 		currentEntity.Draw();
 	}
 
+	// End of Frame
 	{
+		// Sky
 		SkyVSData skyData = {};
 		skyData.view = cameras[currCam]->GetViewMatrix();
 		skyData.projection = cameras[currCam]->GetProjectionMatrix();
 		FillAndBindNextConstantBuffer(&skyData, sizeof(skyData), D3D11_VERTEX_SHADER, 0);
+		Sky::GetInstance()->Draw();
 
-		sky->Draw();
-	}
-
-	// ImGui Drawing
-	{
+		// ImGui Drawing
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-	}
 
-	// Frame END
-	// - These should happen exactly ONCE PER FRAME
-	// - At the very end of the frame (after drawing *everything*)
-	{
 		// Present at the end of the frame
 		bool vsync = Graphics::VsyncState();
 		Graphics::SwapChain->Present(
@@ -645,4 +578,3 @@ void Game::Draw(float deltaTime, float totalTime)
 			Graphics::DepthBufferDSV.Get());
 	}
 }
-
