@@ -64,6 +64,7 @@ public:
 	Mesh(std::string _name, Vertex vertices[], unsigned int numVertices,
 		unsigned int indicies[], unsigned int numIndicies);
 	Mesh(std::string _name, const char* fileToLoad);
+	Mesh(std::string _name, const wchar_t* fileToLoad);
 
 	void CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices);
 

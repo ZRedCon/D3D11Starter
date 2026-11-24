@@ -54,6 +54,7 @@ public:
 	}
 
 	static size_t Count() { return instances.size(); }
+	static void Clear() { instances.clear(); }
 
 	static void InspectAll()
 	{
@@ -62,6 +63,5 @@ public:
 			instance->Inspector();
 	}
 
-	// Does nothing by default; a class can hide it with its own static InspectStatics()
 	static void InspectStatics() {}
 };

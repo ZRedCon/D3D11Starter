@@ -1,5 +1,5 @@
 #include "Mesh.h"
-
+#include "PathHelpers.h"
 
 void Mesh::CreateBuffers(Vertex vertices[], unsigned int numVertices, unsigned int indicies[], unsigned int numIndicies)
 {
@@ -286,6 +286,9 @@ Mesh::Mesh(std::string _name, const char* fileToLoad)
 	// NEXT: Create the actual buffers!
 	CreateBuffers(&finalVertices[ 0 ], unsigned int(finalVertices.size()), &finalIndices[ 0 ], unsigned int(finalIndices.size()));
 }
+
+Mesh::Mesh(std::string _name, const wchar_t* fileToLoad)
+	: Mesh(_name, WideToNarrow(fileToLoad).c_str()) {}
 
 // --------------------------------------------------------
 // Author: Chris Cascioli
